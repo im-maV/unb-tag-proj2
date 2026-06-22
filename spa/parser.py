@@ -7,26 +7,8 @@ pipeline
 
 """
 
-
-class Projeto:
-    """
-    Representa um projeto disponível para alocação de alunos.
-
-    Deve armazenar: código identificador, número mínimo de vagas (r_i),
-    número máximo de vagas (v_i), e a lista de alunos candidatos (preenchida
-    posteriormente pelo graph_builder).
-    """
-    pass
-
-
-class Aluno:
-    """
-    Representa um aluno candidato.
-
-    Deve armazenar: matrícula, lista de preferências de projetos em ordem
-    (até 3), e nota agregada (3, 4 ou 5).
-    """
-    pass
+import re
+from models import Projeto, Aluno
 
 
 def parse_input_file(filepath: str):
@@ -36,7 +18,44 @@ def parse_input_file(filepath: str):
     Deve identificar e separar as duas seções do arquivo (projetos e alunos),
     instanciando objetos Projeto e Aluno para cada linha.
     """
-    pass
+    l_projetos = []
+    l_alunos = []
+    proj_regex = re.compile(r'\((P\d{1,2}),\s*(\d+),\s*(\d+)\)')
+    alunos_regex = re.compile(r'\((A\d{1,2})\)\s*:\s*\(\s*((?:P\d{1,2})(?:\s*,\s*P\d{1,2})*)\s*\)\s*\((\d+)\)')
+
+    with open (filepath, "r") as file:
+        for line in file:
+            match = proj_regex.search(line)
+            if match:
+                cod, num_vagas, nota_min = match.groups()
+                l_projetos.append({
+                    "cod": cod,
+                    "num_vagas": int(num_vagas),
+                    "nota_min": int(nota_min)
+                })
+                continue
+            match = alunos_regex.search(line)
+            if match:
+                cod, projetos, nota = match.groups()
+                l_alunos.append({
+                    "cod": cod,
+                    "projetos": [
+                        p.strip()
+                        for p in projetos.split(",")],
+                    "nota": int(nota)
+                })
+
+    projetos = [
+        Projeto(**p)
+        for p in l_projetos
+    ]
+    alunos = [
+        Aluno(**a)
+        for a in l_alunos
+    ]
+
+    return projetos, alunos
+
 
 
 def validate_parsed_data(projetos: list, alunos: list) -> None:

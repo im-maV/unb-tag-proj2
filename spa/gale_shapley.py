@@ -6,18 +6,7 @@ Student-Project Allocation (SPA), baseada em Abraham, Irving & Manlove
 (2007). Produz um emparelhamento estável entre alunos e projetos.
 """
 
-
-class MatchingState:
-    """
-    Representa o estado do emparelhamento em um dado momento da execução.
-
-    Deve armazenar: dicionário aluno -> projeto (ou None se não emparelhado),
-    dicionário projeto -> lista de alunos emparelhados, conjunto de alunos
-    ainda não emparelhados, e o histórico de propostas já feitas por cada
-    aluno (para saber qual é a próxima preferência a tentar).
-    """
-    pass
-
+from models import MatchingState, Aluno, Projeto
 
 def initialize_matching(graph) -> MatchingState:
     """
@@ -46,7 +35,7 @@ def evaluate_proposal(project, student, state: MatchingState, graph) -> bool:
     pass
 
 
-def run_gale_shapley(graph) -> MatchingState:
+def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]) -> MatchingState:
     """
     Executa o loop principal do algoritmo até que não existam mais alunos
     livres com propostas pendentes a fazer. Retorna o MatchingState final,
