@@ -31,13 +31,13 @@ def main() -> None:
 
     # 1. Parsing
     projetos, alunos = parse_input_file(INPUT_FILE_PATH)
-    validate_parsed_data(projetos, alunos)
+    #validate_parsed_data(projetos, alunos)
 
-    # 2. Construção do grafo bipartido 
-    graph = build_bipartite_graph(projetos, alunos)
+    # 2. Construção do grafo bipartido (CÓDIGO GERADO POR IA DESNCESSÁRIO)
+    #graph = build_bipartite_graph(projetos, alunos)
 
     # 3. Emparelhamento estável inicial (Gale-Shapley adaptado)
-    state = run_gale_shapley(graph)
+    state = run_gale_shapley(projetos, alunos)
 
     # 4. Iterações de aumento via caminhos alternados 
     iteration_states = run_iterations(
@@ -65,4 +65,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    projetos, alunos = parse_input_file(INPUT_FILE_PATH)
+    print(projetos)
+    print(alunos)
