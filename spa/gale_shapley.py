@@ -7,13 +7,8 @@ Student-Project Allocation (SPA), baseada em Abraham, Irving & Manlove
 """
 
 from models import MatchingState, Aluno, Projeto
+import bisect
 
-def initialize_matching(graph) -> MatchingState:
-    """
-    Cria o estado inicial do emparelhamento: todos os alunos livres, todos
-    os projetos sem alunos alocados, nenhuma proposta feita ainda.
-    """
-    pass
 
 
 def propose(student, state: MatchingState, graph) -> None:
@@ -25,20 +20,65 @@ def propose(student, state: MatchingState, graph) -> None:
     pass
 
 
-def evaluate_proposal(project, student, state: MatchingState, graph) -> bool:
+def evaluate_proposal(p_cod: str, aluno: Aluno, projetos: list[Projeto]):
     """
     Decide se o projeto aceita ou rejeita a proposta de um aluno, baseado na
     Nota Agregada e nas vagas disponíveis (vagas_max). Caso o projeto esteja
     cheio mas o novo aluno tenha nota melhor que algum já alocado, deve
     substituir o aluno de menor nota (retorna o aluno expulso, se houver).
     """
-    pass
+    projeto = buscar_projeto(projetos, p_cod)
+    if (not projeto): return False, None
+
+    if (projeto.num_vagas > 0):
+        projeto.ranking_alunos.append(aluno)
+        projeto.num_vagas -= 1
+        return True, None
+
+    last_aluno = projeto.ranking_alunos[-1]
+    if aluno.nota > last_aluno.nota:
+        reject_aluno = projeto.ranking_alunos.pop()
+        inserir_aluno_ranking(projeto, aluno)
+        return True, reject_aluno
+    return False, None
 
 
-def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]) -> MatchingState:
+
+
+def buscar_projeto(projetos: list[Projeto], cod):
+    return next((p for p in projetos if p.cod == cod), None)
+
+
+def inserir_aluno_ranking(projeto: Projeto, aluno: Aluno):
+    notas = [-a.nota for a in projeto.ranking_alunos]
+    pos = bisect.bisect_right(notas, -aluno.nota)
+    projeto.ranking_alunos.insert(pos, aluno)
+
+
+def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
     """
     Executa o loop principal do algoritmo até que não existam mais alunos
     livres com propostas pendentes a fazer. Retorna o MatchingState final,
     que deve ser estável (sem pares bloqueantes).
     """
-    pass
+    alunos = sorted(alunos, key=lambda a: int(a.cod[1:]))
+    print(alunos)
+
+    
+    matching = dict()
+    alunos_emparelhados = []
+    while (len(alunos) > 0):
+        aluno = alunos.pop()
+        # propose
+        while len(aluno.projetos) > 0:
+            p_cod = aluno.projetos.pop(0)
+            accept, reject_aluno = evaluate_proposal(p_cod, aluno, projetos)
+            if (reject_aluno): alunos.append(reject_aluno)
+            if (accept):
+                alunos_emparelhados.append(aluno)
+                matching[aluno.cod] = p_cod
+                break
+    return matching, alunos_emparelhados
+            
+
+

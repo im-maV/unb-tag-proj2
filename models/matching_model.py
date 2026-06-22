@@ -1,10 +1,12 @@
+import networkx as nx
+
 class Matchings:
     """
     Represena o emparelhamento final depois de i (10) iteracões
         1. bipartite_graph: atributo estático representando o grafo bipartido inicial
         2. states: lista do estado de todos os i (10) emparelhmento realizados pelo algoritimo de caminhos aumentantes
     """
-    bipartite_graph = None
+    bipartite_graph: nx.Graph = None
     def __init__(self):
         states: list[MatchingState] = []
 
