@@ -35,3 +35,20 @@ Não implemente nenhum códiga, mas forneça um docstring explicativa para cada 
 Foram adicionados os arquivos requirements.txt e .gitignore
 
 ---
+
+
+## Prompt 02 - Debugg-1
+### Prompt
+Verifique por inconsistências e erros no módulo gale_shapley.py. Indique quais erros e propostas de soluções, mas não altere o arquivo.
+
+### Modificações Realizadas
+Com base nas propostas geradas pelo modelo, foram feitas as seguintes correções/refatorações:
+1. aluno expulso continua no matching
+2. destruindo informação do número de vagas de projeto
+3. Nota minima do projeto não verificada
+4. aluno emparelhado duas vezes
+5. Logica da estrutura de dados de emparelhados alterada
+- Features
+1. Verificação minimo alunos por projeto
+2. Movido a logica do propose para fora do loop principal
+
