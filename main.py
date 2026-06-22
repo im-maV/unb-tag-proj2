@@ -23,7 +23,8 @@ from spa import (
 )
 from spa.visualization import plot_bipartite_iteration, plot_preference_index_summary
 
-INPUT_FILE_PATH = "data/entradaProj2.26TAG.txt"
+#INPUT_FILE_PATH = "data/entradaProj2.26TAG.txt"
+INPUT_FILE_PATH = "data/small_data1.txt"
 N_ITERATIONS = 10
 
 
@@ -67,5 +68,5 @@ def main() -> None:
 if __name__ == "__main__":
     #main()
     projetos, alunos = parse_input_file(INPUT_FILE_PATH)
-    print(projetos)
-    print(alunos)
+    m, acp = run_gale_shapley(alunos=alunos, projetos=projetos)
+    print(m)
