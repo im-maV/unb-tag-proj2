@@ -31,4 +31,17 @@ class MatchingState:
         proposed_edges = proposed_edges
         matched_edges = matched_edges
         rejected_edges = rejected_edges
+        allocated_projects = {}
 
+
+    def is_matched(self, aluno, projeto) -> bool:
+        """
+        Verifica se um dado aluno está atualmente alocado a um dado projeto neste estado.
+        """
+        return self.matching.get(aluno) == projeto
+    def has_capacity(self, projeto) -> bool:
+        """
+        Verifica se um dado projeto ainda tem vagas disponíveis.
+        """
+        current_students = self.allocated_projects.get(projeto, [])
+        return len(current_students) < projeto.num_vagas
