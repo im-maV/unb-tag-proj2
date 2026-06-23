@@ -68,5 +68,5 @@ def main() -> None:
 if __name__ == "__main__":
     #main()
     projetos, alunos = parse_input_file(INPUT_FILE_PATH)
-    m, acp = run_gale_shapley(alunos=alunos, projetos=projetos)
+    m, acp, reject = run_gale_shapley(alunos=alunos, projetos=projetos)
     print(m)

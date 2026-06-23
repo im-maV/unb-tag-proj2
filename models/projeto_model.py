@@ -12,6 +12,6 @@ class Projeto:
         self.cod = cod
         self.num_vagas = num_vagas
         self.nota_min = nota_min
-        self.ranking_alunos: list[Aluno] = []
+        self.aluno_aceitos: list[Aluno] = []
     def __repr__(self):
         return f"Projeto(cod='{self.cod}', num_vagas={self.num_vagas}, nota_min={self.nota_min}"
