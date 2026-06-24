@@ -20,6 +20,7 @@ from spa import (
     is_stable_matching,
     build_final_matching_matrix,
     compute_all_preference_indices,
+    build_matching_state,
 )
 from spa.visualization import plot_bipartite_iteration, plot_preference_index_summary
 
@@ -70,10 +71,16 @@ if __name__ == "__main__":
 
     # debug only
     projetos, alunos = parse_input_file(INPUT_FILE_PATH)
-    state = run_gale_shapley(alunos=alunos, projetos=projetos)
+    m, acp, reject = run_gale_shapley(alunos=alunos, projetos=projetos)
+    print("=== Gale-Shapley ===")
+    print(m)
+
+    state = build_matching_state(matching=m, rejected_edges=reject, iteration=0)
+    print("\n=== MatchingState ===")
     print(state)
 
     graph = build_bipartite_graph(projetos, alunos)
-    print(f"\nNós: {graph.number_of_nodes()} | Arestas: {graph.number_of_edges()}")
+    print(f"\n=== Grafo Bipartido ===")
+    print(f"Nós: {graph.number_of_nodes()} | Arestas: {graph.number_of_edges()}")
     for a, p, data in graph.edges(data=True):
-        print(f"{a} -> {p} | pref={data['preferencia']}")
+        print(f"  {a} -> {p} | pref={data['preferencia']}")

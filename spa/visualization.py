@@ -16,7 +16,9 @@ def get_edge_colors(graph, state, iteration_log) -> dict:
     pass
 
 
-def plot_bipartite_iteration(graph, state, iteration_log, iteration_number: int) -> None:
+def plot_bipartite_iteration(
+    graph, state, iteration_log, iteration_number: int
+) -> None:
     """
     Plota o grafo bipartido de uma iteração específica, com alunos de um
     lado e projetos do outro, arestas coloridas conforme

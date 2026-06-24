@@ -7,6 +7,7 @@ Student-Project Allocation (SPA), baseada em Abraham, Irving & Manlove
 """
 
 from models import MatchingState, Aluno, Projeto
+from typing import List, Tuple, Dict
 from collections import deque
 import bisect
 
@@ -145,10 +146,28 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
             f"[AVISO] Projetos sem nenhum aluno alocado (violação do enunciado): {sem_alunos}"
         )
 
+    return matching, alunos_emparelhados, rejects_edges
+
+
+def build_matching_state(
+    matching: Dict[str, str],
+    proposed_edges: List[dict] = None,
+    matched_edges: List[Tuple[str, str]] = None,
+    rejected_edges: List[dict] = None,
+    iteration: int = 0,
+) -> MatchingState:
+    """
+    Constrói um `MatchingState` a partir dos componentes do emparelhamento.
+    """
+    proposed_edges = proposed_edges or []
+    rejected_edges = rejected_edges or []
+    if matched_edges is None:
+        matched_edges = [(a, p) for a, p in matching.items()]
+
     return MatchingState(
         matching=matching,
-        proposed_edges=[],
-        matched_edges=[(a, p) for a, p in matching.items()],
-        rejected_edges=rejects_edges,
-        iteration=0,
+        proposed_edges=proposed_edges,
+        matched_edges=matched_edges,
+        rejected_edges=rejected_edges,
+        iteration=iteration,
     )
