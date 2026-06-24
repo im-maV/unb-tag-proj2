@@ -11,9 +11,13 @@ from collections import deque
 import bisect
 
 
-
-def propose(aluno: Aluno, projetos: list[Projeto], free_alunos: deque, 
-            matching: dict, rejects_edges: list) -> None:
+def propose(
+    aluno: Aluno,
+    projetos: list[Projeto],
+    free_alunos: deque,
+    matching: dict,
+    rejects_edges: list,
+) -> None:
     """
     Faz o aluno propor ao próximo projeto em sua lista de preferência.
     Atualiza matching, fila de livres e lista de rejeições conforme resultado
@@ -22,33 +26,25 @@ def propose(aluno: Aluno, projetos: list[Projeto], free_alunos: deque,
         return
     projeto_cod = aluno.preferencia[aluno.prox_preferencia]
     aluno.prox_preferencia += 1
-    
+
     # propose
     accept, reject_aluno = evaluate_proposal(projeto_cod, aluno, projetos)
 
     if accept:
         matching[aluno.cod] = projeto_cod
 
-        if reject_aluno: 
-             # Remove emparelhamento do aluno expulso e recoloca na fila
+        if reject_aluno:
+            # Remove emparelhamento do aluno expulso e recoloca na fila
             matching.pop(reject_aluno.cod, None)
-            #reject_aluno.prox_preferencia
+            # reject_aluno.prox_preferencia
             free_alunos.append(reject_aluno)
-            rejects_edges.append({
-                    "aluno": reject_aluno.cod,
-                    "projeto": projeto_cod
-                })
+            rejects_edges.append({"aluno": reject_aluno.cod, "projeto": projeto_cod})
 
     # se ainda há preferencias
     else:
         if aluno.prox_preferencia < len(aluno.preferencia):
             free_alunos.append(aluno)
-        rejects_edges.append({
-                "aluno": aluno.cod,
-                "projeto": projeto_cod
-            })
-
-
+        rejects_edges.append({"aluno": aluno.cod, "projeto": projeto_cod})
 
 
 def buscar_projeto(projetos: list[Projeto], cod):
@@ -82,7 +78,7 @@ def evaluate_proposal(p_cod: str, aluno: Aluno, projetos: list[Projeto]):
         Aluno expulso: Aluno | None
     """
     projeto = buscar_projeto(projetos, p_cod)
-    if not projeto: 
+    if not projeto:
         return False, None
 
     # elegibilidade minima
@@ -100,7 +96,7 @@ def evaluate_proposal(p_cod: str, aluno: Aluno, projetos: list[Projeto]):
         projeto.aluno_aceitos.remove(pior_aluno)
         inserir_aluno_projeto(projeto, aluno)
         return True, pior_aluno
-    
+
     return False, None
 
 
@@ -121,7 +117,7 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
     """
     SPA-Students com variação
     Executa o loop principal do algoritmo até que não existam mais alunos
-    livres com propostas pendentes a fazer. 
+    livres com propostas pendentes a fazer.
     - Propostas partem dos alunos
     - Rejeições consideram a nota do aluno vs pior nota do aluno aceito no projeto
     - OBS: Verifica se existe no mínimo 1 aluno por projeto
@@ -145,7 +141,14 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
     alunos_emparelhados = [a for a in alunos if a.cod in matching]
     sem_alunos = verificar_minimo_por_projeto(projetos, matching)
     if sem_alunos:
-        print(f"[AVISO] Projetos sem nenhum aluno alocado (violação do enunciado): {sem_alunos}")
-                
-    return matching, alunos_emparelhados, rejects_edges
-            
+        print(
+            f"[AVISO] Projetos sem nenhum aluno alocado (violação do enunciado): {sem_alunos}"
+        )
+
+    return MatchingState(
+        matching=matching,
+        proposed_edges=[],
+        matched_edges=[(a, p) for a, p in matching.items()],
+        rejected_edges=rejects_edges,
+        iteration=0,
+    )

@@ -67,12 +67,13 @@ def main() -> None:
 
 if __name__ == "__main__":
     # main()
-    projetos, alunos = parse_input_file(INPUT_FILE_PATH)
-    m, acp, reject = run_gale_shapley(alunos=alunos, projetos=projetos)
-    print(m)
 
     # debug only
+    projetos, alunos = parse_input_file(INPUT_FILE_PATH)
+    state = run_gale_shapley(alunos=alunos, projetos=projetos)
+    print(state)
+
     graph = build_bipartite_graph(projetos, alunos)
-    print("Nós:", graph.number_of_nodes(), "| Arestas:", graph.number_of_edges())
+    print(f"\nNós: {graph.number_of_nodes()} | Arestas: {graph.number_of_edges()}")
     for a, p, data in graph.edges(data=True):
         print(f"{a} -> {p} | pref={data['preferencia']}")

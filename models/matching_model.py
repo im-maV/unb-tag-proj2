@@ -8,9 +8,8 @@ class Matchings:
         2. states: lista do estado de todos os i (10) emparelhmento realizados pelo algoritimo de caminhos aumentantes
     """
 
-    bipartite_graph: nx.Graph = None
-
-    def __init__(self):
+    def __init__(self, bipartite_graph: nx.Graph):
+        self.bipartite_graph = bipartite_graph
         self.states: list[MatchingState] = []
 
 
@@ -35,3 +34,12 @@ class MatchingState:
         self.proposed_edges = proposed_edges
         self.matched_edges = matched_edges
         self.rejected_edges = rejected_edges
+
+    # Define representação legível do objeto para debug (print/debugger)
+    def __repr__(self):
+        return (
+            f"MatchingState(iteration={self.iteration},\n"
+            f"  matching={self.matching},\n"
+            f"  matched_edges={self.matched_edges},\n"
+            f"  rejected_edges={self.rejected_edges})"
+        )
