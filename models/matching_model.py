@@ -39,6 +39,8 @@ class MatchingState:
         Verifica se um dado aluno está atualmente alocado a um dado projeto neste estado.
         """
         return self.matching.get(aluno) == projeto
+    
+    
     def has_capacity(self, projeto) -> bool:
         """
         Verifica se um dado projeto ainda tem vagas disponíveis.

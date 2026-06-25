@@ -5,7 +5,8 @@ Implementa a busca por caminhos M-alternados/aumentantes, usada nas 10
 iterações exigidas pelo enunciado para tentar aumentar o emparelhamento a
 partir dos alunos que ficaram sem projeto na rodada anterior.
 """
-from models import MatchingState, Aluno, Projeto
+import copy
+from models import Aluno
 from collections import deque
 
 def find_augmenting_path(start_student, graph, state) -> list | None:
@@ -48,8 +49,30 @@ def augment_matching(path: list, state) -> None:
     o status (dentro/fora de M) de cada aresta do caminho encontrado,
     aumentando o emparelhamento em 1.
     """
-    pass
+    for i in range(len(path) - 1):
+        node_a = path[i]
+        node_b = path[i + 1]
 
+        # Checa tipo
+        if(type(node_a) == Aluno): 
+            student, project = node_a, node_b
+        else:
+            project, student = node_a, node_b
+
+        # Checa se a aresta já existe, se sim inverte para cobrir todo o 
+        # caminho encontrado
+        if(state.is_matched(student, project)):
+            del state.matching[student]
+            if student in state.allocated_projects.get(project, []):
+                state.allocated_projects[project].remove(student)
+        # se não, adicionamos a aresta ao state (primeira e última do caminho)
+        else: 
+            state.matching[student] = project
+            # Como não podemos deixar projetos sem alocação creio que 
+            # essa verificação é válida
+            if project not in state.allocated_projects:
+                state.allocated_projects[project] = []
+            state.allocated_projects[project].append(student)
 
 def run_iterations(
     graph,
@@ -78,3 +101,4 @@ def run_iterations(
     Retorna a lista de estados intermediários (um por iteração), para reuso
     posterior (ex: matriz final, índice de preferência).
     """
+
