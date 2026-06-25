@@ -5,12 +5,12 @@ Funções de plotagem do grafo bipartido colorido por iteração, e de
 visualizações auxiliares (índice de preferência, matriz final).
 """
 
-import networkx as nx
 from pathlib import Path
 from typing import Any, Mapping, Sequence, Set, Tuple
 
 import matplotlib
 import matplotlib.pyplot as plt
+import networkx as nx
 
 from matplotlib.lines import Line2D
 from spa.graph_builder import get_bipartite_sets

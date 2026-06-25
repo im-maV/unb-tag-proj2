@@ -18,11 +18,11 @@ def build_bipartite_graph(projetos: list, alunos: list):
     presentes na lista de preferência do aluno e carregam o atributo
     'preferencia'.
     """
-    G = nx.Graph()
+    graph = nx.Graph()
 
     # Nó de projeto
     for projeto in projetos:
-        G.add_node(
+        graph.add_node(
             projeto.cod,
             bipartite=1,
             nota_min=projeto.nota_min,
@@ -32,17 +32,17 @@ def build_bipartite_graph(projetos: list, alunos: list):
 
     # Nós de alunos + arestas de preferência
     for aluno in alunos:
-        G.add_node(aluno.cod, bipartite=0, nota=aluno.nota)
+        graph.add_node(aluno.cod, bipartite=0, nota=aluno.nota)
         for rank, projeto_cod in enumerate(aluno.preferencia, start=1):
-            if not G.has_node(projeto_cod):
+            if not graph.has_node(projeto_cod):
                 continue
-            G.add_edge(aluno.cod, projeto_cod, preferencia=rank)
-            G.nodes[projeto_cod]["candidatos"].append(aluno.cod)
+            graph.add_edge(aluno.cod, projeto_cod, preferencia=rank)
+            graph.nodes[projeto_cod]["candidatos"].append(aluno.cod)
 
-    if not nx.is_bipartite(G):
+    if not nx.is_bipartite(graph):
         raise ValueError("O grafo construído não é bipartido.")
 
-    return G
+    return graph
 
 
 def get_bipartite_sets(graph):
