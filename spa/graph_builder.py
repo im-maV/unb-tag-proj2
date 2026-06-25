@@ -2,37 +2,47 @@
 spa.graph_builder
 ==================
 Constrói o grafo bipartido NetworkX a partir das estruturas geradas pelo
-parser. 
+parser.
 """
+
+import networkx as nx
 
 
 def build_bipartite_graph(projetos: list, alunos: list):
     """
     Constrói o grafo bipartido G = (Alunos ∪ Projetos, E) usando NetworkX.
 
-    Deve adicionar um nó por aluno e um nó por projeto, marcando o atributo
-    'bipartite' de cada lado (0 para alunos, 1 para projetos). Cada aresta
-    (aluno, projeto) deve existir apenas se o projeto está na lista de
-    preferências do aluno.
+    Cada aluno recebe um nó com atributo 'bipartite' = 0 e 'nota'.
+    Cada projeto recebe um nó com atributo 'bipartite' = 1, 'nota_min',
+    'vagas_max' e 'candidatos'. Arestas existem apenas para projetos
+    presentes na lista de preferência do aluno e carregam o atributo
+    'preferencia'.
     """
-    pass
+    graph = nx.Graph()
 
+    # Nó de projeto
+    for projeto in projetos:
+        graph.add_node(
+            projeto.cod,
+            bipartite=1,
+            nota_min=projeto.nota_min,
+            vagas_max=projeto.num_vagas,
+            candidatos=[],
+        )
 
-def annotate_edge_preferences(graph, alunos: list) -> None:
-    """
-    Anota cada aresta do grafo com a posição de preferência do aluno
-    (1ª, 2ª ou 3ª escolha), como atributo da aresta.
-    """
-    pass
+    # Nós de alunos + arestas de preferência
+    for aluno in alunos:
+        graph.add_node(aluno.cod, bipartite=0, nota=aluno.nota)
+        for rank, projeto_cod in enumerate(aluno.preferencia, start=1):
+            if not graph.has_node(projeto_cod):
+                continue
+            graph.add_edge(aluno.cod, projeto_cod, preferencia=rank)
+            graph.nodes[projeto_cod]["candidatos"].append(aluno.cod)
 
+    if not nx.is_bipartite(graph):
+        raise ValueError("O grafo construído não é bipartido.")
 
-def annotate_node_attributes(graph, projetos: list, alunos: list) -> None:
-    """
-    Anota atributos nos nós: vagas_min e vagas_max nos nós de projeto, e
-    nota agregada nos nós de aluno. Usado posteriormente pelo algoritmo de
-    Gale-Shapley para critério de aceite/rejeição.
-    """
-    pass
+    return graph
 
 
 def get_bipartite_sets(graph):
@@ -40,4 +50,6 @@ def get_bipartite_sets(graph):
     Retorna os dois conjuntos de vértices do grafo bipartido (alunos,
     projetos), separados a partir do atributo 'bipartite' de cada nó.
     """
-    pass
+    students = {n for n, data in graph.nodes(data=True) if data.get("bipartite") == 0}
+    projects = {n for n, data in graph.nodes(data=True) if data.get("bipartite") == 1}
+    return students, projects

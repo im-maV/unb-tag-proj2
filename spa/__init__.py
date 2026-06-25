@@ -11,9 +11,12 @@ notebook usem exatamente o mesmo código-fonte, sem duplicação de lógica.
 
 from spa.parser import parse_input_file, validate_parsed_data
 from spa.graph_builder import build_bipartite_graph, get_bipartite_sets
-from spa.gale_shapley import run_gale_shapley, MatchingState
+from spa.gale_shapley import run_gale_shapley, build_matching_state
 from spa.augmenting_path import run_iterations, find_augmenting_path
 from spa.metrics import build_final_matching_matrix, compute_all_preference_indices
-from spa.visualization import plot_all_iterations, plot_preference_index_summary
+from spa.visualization import (
+    plot_all_iterations,
+    plot_bipartite_iteration,
+    plot_preference_index_summary,
+)
 from spa.validation import is_stable_matching, find_blocking_pairs
-

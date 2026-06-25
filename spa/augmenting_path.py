@@ -5,9 +5,11 @@ Implementa a busca por caminhos M-alternados/aumentantes, usada nas 10
 iterações exigidas pelo enunciado para tentar aumentar o emparelhamento a
 partir dos alunos que ficaram sem projeto na rodada anterior.
 """
+
 import copy
-from models import Aluno
 from collections import deque
+from models import Aluno
+
 
 def find_augmenting_path(start_student, graph, state) -> list | None:
     """
@@ -22,7 +24,7 @@ def find_augmenting_path(start_student, graph, state) -> list | None:
 
     while queue:
         current_node, path = queue.popleft()
-        is_student = (type(current_node) == Aluno)
+        is_student = isinstance(current_node, Aluno)
 
         if is_student:
             for project in graph.neighbors(current_node):
@@ -30,12 +32,12 @@ def find_augmenting_path(start_student, graph, state) -> list | None:
                     if project not in visited:
                         visited.add(project)
                         queue.append((project, path + [project]))
-        else: 
-            if state.has_capacity(current_node): 
+        else:
+            if state.has_capacity(current_node):
                 return path
-            
+
             allocated_students = state.get_allocated_students(current_node)
-            
+
             for alloc_student in allocated_students:
                 if alloc_student not in visited:
                     visited.add(alloc_student)
@@ -54,25 +56,26 @@ def augment_matching(path: list, state) -> None:
         node_b = path[i + 1]
 
         # Checa tipo
-        if(type(node_a) == Aluno): 
+        if isinstance(node_a, Aluno):
             student, project = node_a, node_b
         else:
             project, student = node_a, node_b
 
-        # Checa se a aresta já existe, se sim inverte para cobrir todo o 
+        # Checa se a aresta já existe, se sim inverte para cobrir todo o
         # caminho encontrado
-        if(state.is_matched(student, project)):
+        if state.is_matched(student, project):
             del state.matching[student]
             if student in state.allocated_projects.get(project, []):
                 state.allocated_projects[project].remove(student)
         # se não, adicionamos a aresta ao state (primeira e última do caminho)
-        else: 
+        else:
             state.matching[student] = project
-            # Como não podemos deixar projetos sem alocação creio que 
+            # Como não podemos deixar projetos sem alocação creio que
             # essa verificação é válida
             if project not in state.allocated_projects:
                 state.allocated_projects[project] = []
             state.allocated_projects[project].append(student)
+
 
 def run_iterations(
     graph,
@@ -105,7 +108,7 @@ def run_iterations(
     state_history = []
     current_state = copy.deepcopy(initial_state)
 
-    for iteration in range(1, n_iterations + 1): 
+    for iteration in range(1, n_iterations + 1):
         current_state.iteration = iteration
 
         free_students.sort(key=lambda x: x.cod)
@@ -113,22 +116,21 @@ def run_iterations(
         for student in free_students:
             path = find_augmenting_path(student, graph, current_state)
 
-            if path: 
+            if path:
                 augment_matching(path, current_state)
-        
+
         # Log visual
         interation_log = {
-            'proposed_edges': current_state.proposed_edges,
-            'matched_edges': [(s, p) for s, p in current_state.matchings.items()],
-            'rejected_edges': current_state.rejected_edges
+            "proposed_edges": current_state.proposed_edges,
+            "matched_edges": [(s, p) for s, p in current_state.matchings.items()],
+            "rejected_edges": current_state.rejected_edges,
         }
 
         # callback
         if on_iteration_end is not None:
             on_iteration_end(current_state, interation_log, iteration)
-        
+
         # adiciona o estado dessa iteração no histórico
         state_history.append(copy.deepcopy(current_state))
-    
-    return state_history
 
+    return state_history
