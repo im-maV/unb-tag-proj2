@@ -84,3 +84,5 @@ if __name__ == "__main__":
     print(f"Nós: {graph.number_of_nodes()} | Arestas: {graph.number_of_edges()}")
     for a, p, data in graph.edges(data=True):
         print(f"  {a} -> {p} | pref={data['preferencia']}")
+
+    plot_bipartite_iteration(graph, state)
