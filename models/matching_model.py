@@ -20,7 +20,7 @@ class MatchingState:
     Deve armazenar: 
         1. Matching (dicionário aluno -> projeto) 
         2. dicionário projeto -> lista de alunos emparelhados (Necessário?)
-        3. conjunto de alunos ainda não emparelhados (Necessário?)
+        3. conjunto de alunos ainda não emparelhados
         4. histórico de propostas já feitas por cada aluno (para saber qual é a próxima preferência a tentar)
             a) proposed_edges e rejected_edges
     """
@@ -31,4 +31,20 @@ class MatchingState:
         proposed_edges = proposed_edges
         matched_edges = matched_edges
         rejected_edges = rejected_edges
+        allocated_projects = {}
+        free_students = {}      # tem que adequar isso no galey shapley
 
+
+    def is_matched(self, aluno, projeto) -> bool:
+        """
+        Verifica se um dado aluno está atualmente alocado a um dado projeto neste estado.
+        """
+        return self.matching.get(aluno) == projeto
+    
+    
+    def has_capacity(self, projeto) -> bool:
+        """
+        Verifica se um dado projeto ainda tem vagas disponíveis.
+        """
+        current_students = self.allocated_projects.get(projeto, [])
+        return len(current_students) < projeto.num_vagas
