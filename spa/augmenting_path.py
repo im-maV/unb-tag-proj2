@@ -77,6 +77,7 @@ def augment_matching(path: list, state) -> None:
 def run_iterations(
     graph,
     initial_state,
+    free_students,
     n_iterations: int = 10,
     on_iteration_end=None,
 ) -> list:
@@ -101,4 +102,33 @@ def run_iterations(
     Retorna a lista de estados intermediários (um por iteração), para reuso
     posterior (ex: matriz final, índice de preferência).
     """
+    state_history = []
+    current_state = copy.deepcopy(initial_state)
+
+    for iteration in range(1, n_iterations + 1): 
+        current_state.iteration = iteration
+
+        free_students.sort(key=lambda x: x.cod)
+
+        for student in free_students:
+            path = find_augmenting_path(student, graph, current_state)
+
+            if path: 
+                augment_matching(path, current_state)
+        
+        # Log visual
+        interation_log = {
+            'proposed_edges': current_state.proposed_edges,
+            'matched_edges': [(s, p) for s, p in current_state.matchings.items()],
+            'rejected_edges': current_state.rejected_edges
+        }
+
+        # callback
+        if on_iteration_end is not None:
+            on_iteration_end(current_state, interation_log, iteration)
+        
+        # adiciona o estado dessa iteração no histórico
+        state_history.append(copy.deepcopy(current_state))
+    
+    return state_history
 
