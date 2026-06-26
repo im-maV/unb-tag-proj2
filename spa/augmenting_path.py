@@ -7,11 +7,16 @@ partir dos alunos que ficaram sem projeto na rodada anterior.
 """
 
 import copy
+import networkx as nx
 from collections import deque
-from models import Aluno
+from models.aluno_model import Aluno
+from models.projeto_model import Projeto
+from models.matching_model import MatchingState
+from typing import Callable, List, Deque, Tuple 
 
+Node = Aluno | Projeto
 
-def find_augmenting_path(start_student, graph, state) -> list | None:
+def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingState):
     """
     Busca (BFS ou DFS alternada) um caminho M-aumentante a partir de um
     aluno livre, alternando entre arestas fora do emparelhamento e arestas
@@ -19,24 +24,26 @@ def find_augmenting_path(start_student, graph, state) -> list | None:
     Retorna a sequência de vértices do caminho, ou None se não existir.
     """
     # Fila que contém o nó atual e uma lista com o caminho percorrido
-    queue = deque([start_student, [start_student]])
-    visited = {start_student}
+    queue: Deque[Tuple[Node, List[Node]]] = deque([(start_student, [start_student])])
+    visited: set[Node] = {start_student}
 
     while queue:
         current_node, path = queue.popleft()
         is_student = isinstance(current_node, Aluno)
 
         if is_student:
-            for project in graph.neighbors(current_node):
-                if not state.is_matched(current_node, project):
+            aluno: Aluno = current_node
+            for project in graph.neighbors(aluno):
+                if not state.is_matched(aluno, project):
                     if project not in visited:
                         visited.add(project)
                         queue.append((project, path + [project]))
         else:
-            if state.has_capacity(current_node):
+            project: Projeto = current_node
+            if state.has_capacity(project):
                 return path
 
-            allocated_students = state.get_allocated_students(current_node)
+            allocated_students = state.get_allocated_students(project)
 
             for alloc_student in allocated_students:
                 if alloc_student not in visited:
@@ -45,7 +52,7 @@ def find_augmenting_path(start_student, graph, state) -> list | None:
     return None
 
 
-def augment_matching(path: list, state) -> None:
+def augment_matching(path: List[Node], state: MatchingState) -> None:
     """
     Aplica a operação de augmentação sobre o emparelhamento atual: inverte
     o status (dentro/fora de M) de cada aresta do caminho encontrado,
@@ -64,26 +71,18 @@ def augment_matching(path: list, state) -> None:
         # Checa se a aresta já existe, se sim inverte para cobrir todo o
         # caminho encontrado
         if state.is_matched(student, project):
-            del state.matching[student]
-            if student in state.allocated_projects.get(project, []):
-                state.allocated_projects[project].remove(student)
+            state.remove_pair(student, project)
         # se não, adicionamos a aresta ao state (primeira e última do caminho)
         else:
-            state.matching[student] = project
-            # Como não podemos deixar projetos sem alocação creio que
-            # essa verificação é válida
-            if project not in state.allocated_projects:
-                state.allocated_projects[project] = []
-            state.allocated_projects[project].append(student)
-
+            state.add_pair(student, project)
 
 def run_iterations(
-    graph,
-    initial_state,
-    free_students,
+    graph: nx.Graph,
+    initial_state: MatchingState,
+    free_students: List[Aluno],
     n_iterations: int = 10,
-    on_iteration_end=None,
-) -> list:
+    on_iteration_end: Callable[[MatchingState, dict, int], None] | None = None,
+):
     """
     Executa o loop de N iterações (determinístico, sem aleatoriedade).
 
@@ -105,7 +104,7 @@ def run_iterations(
     Retorna a lista de estados intermediários (um por iteração), para reuso
     posterior (ex: matriz final, índice de preferência).
     """
-    state_history = []
+    state_history: list[MatchingState] = []
     current_state = copy.deepcopy(initial_state)
 
     for iteration in range(1, n_iterations + 1):
@@ -122,7 +121,7 @@ def run_iterations(
         # Log visual
         interation_log = {
             "proposed_edges": current_state.proposed_edges,
-            "matched_edges": [(s, p) for s, p in current_state.matchings.items()],
+            "matched_edges": [(s, p) for s, p in current_state.matching],
             "rejected_edges": current_state.rejected_edges,
         }
 
@@ -132,5 +131,6 @@ def run_iterations(
 
         # adiciona o estado dessa iteração no histórico
         state_history.append(copy.deepcopy(current_state))
+        print(f"{iteration}:\n{current_state}")
 
     return state_history

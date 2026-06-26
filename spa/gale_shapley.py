@@ -7,16 +7,18 @@ Student-Project Allocation (SPA), baseada em Abraham, Irving & Manlove
 """
 
 from collections import deque
-from typing import Dict, List, Tuple
-from models import Aluno, MatchingState, Projeto
+from typing import Dict, List, Tuple, Deque
+from models.aluno_model import Aluno
+from models.matching_model import MatchingState
+from models.projeto_model import Projeto
 
 
 def propose(
     aluno: Aluno,
     projetos: list[Projeto],
-    free_alunos: deque,
-    matching: dict,
-    rejects_edges: list,
+    free_alunos: Deque[Aluno],
+    matching: List[Tuple[Aluno, Projeto]],
+    rejects_edges: list[Dict],
 ) -> None:
     """
     Faz o aluno propor ao próximo projeto em sua lista de preferência.
@@ -28,13 +30,16 @@ def propose(
     projeto_cod = aluno.proxima_preferencia()
     aluno.prox_preferencia += 1
 
-    accept, reject_aluno = evaluate_proposal(projeto_cod, aluno, projetos)
+    accept, reject_aluno, projeto = evaluate_proposal(projeto_cod, aluno, projetos)
 
     if accept:
-        matching[aluno.cod] = projeto_cod
+        matching.append((aluno, projeto))
         if reject_aluno:
-            # Remove emparelhamento do aluno expulso e recoloca na fila
-            matching.pop(reject_aluno.cod, None)
+            # Remove emparelhamento do aluno expulso e recoloca na fila)
+            matching = [
+                (a, b) for a, b in matching
+                if a.cod != reject_aluno.cod
+            ]
             # reject_aluno.prox_preferencia
             free_alunos.append(reject_aluno)
             rejects_edges.append({"aluno": reject_aluno.cod, "projeto": projeto_cod})
@@ -59,40 +64,37 @@ def evaluate_proposal(p_cod: str, aluno: Aluno, projetos: list[Projeto]):
     return:
         Aceito: boolean
         Aluno expulso: Aluno | None
+        project: Projeto associado ao Aluno
     """
     projeto = buscar_projeto(projetos, p_cod)
     if not projeto:
-        return False, None
+        return False, None, None
     # elegibilidade minima
     if not projeto.aceita_nota(aluno.nota):
-        return False, None
+        return False, None, None
 
     # vaga disponivel: aceita diretamente
     if projeto.tem_vaga():
         projeto.inserir_aluno(aluno)
-        return True, None
+        return True, None, projeto
 
     # sem vaga: compara com pior aluno aceito
     pior = projeto.pior_aluno()
     if pior and aluno.nota > pior.nota:
         projeto.aluno_aceitos.remove(pior)
         projeto.inserir_aluno(aluno)
-        return True, pior
+        return True, pior, projeto
 
-    return False, None
+    return False, None, None
 
 
-def verificar_minimo_por_projeto(projetos: list[Projeto], matching: dict) -> list[str]:
+def verificar_minimo_por_projeto(projetos: list[Projeto], matching: List[Tuple[Aluno, Projeto]]) -> list[str]:
     """
     Cada projeto deve ter ao menos 1 aluno.
     Retorna lista de projetos que ficaram sem alunos.
     """
-    alocados_por_projeto = {}
-    for aluno_cod, proj_cod in matching.items():
-        alocados_por_projeto.setdefault(proj_cod, []).append(aluno_cod)
-
-    sem_alunos = [p.cod for p in projetos if p.cod not in alocados_por_projeto]
-    return sem_alunos
+    projetos_com_aluno = {p.cod for a,p in matching}
+    return [p.cod for p in projetos if p.cod not in projetos_com_aluno]
 
 
 def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
@@ -105,28 +107,28 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
     - OBS: Verifica se existe no mínimo 1 aluno por projeto
 
     return:
-        matching:           dict aluno -> projeto
+        matching:           lista de pares (Aluno, Projeto) - onde Aluno e Projeto são objetos
         alunos_emparelhados: lista de alunos alocados
         rejects_edges:      lista de rejeições
         allocated_projects: dict projeto -> lista de alunos aceitos
-        free_students:      conjunto de códigos de alunos não alocados
+        free_students:      lista de objetos Aluno sem alocação
     """
     alunos = sorted(alunos, key=lambda a: int(a.cod[1:]))
     free_alunos = deque(alunos)
-    matching = {}
+    matching: List[Tuple[Aluno, Projeto]] = []
     rejects_edges = []
 
     while free_alunos:
         aluno = free_alunos.popleft()
         propose(aluno, projetos, free_alunos, matching, rejects_edges)
 
-    alunos_emparelhados = [a for a in alunos if a.cod in matching]
+    alunos_emparelhados = {a for a,p in matching}
     sem_alunos = verificar_minimo_por_projeto(projetos, matching)
     if sem_alunos:
         print(f"[AVISO] Projetos sem nenhum aluno alocado: {sem_alunos}")
 
     allocated_projects = {proj.cod: proj.aluno_aceitos for proj in projetos}
-    free_students = {a.cod for a in alunos if a.cod not in matching}
+    free_students: list[Aluno] = [a for a in alunos if a.cod not in matching]
 
     return (
         matching,
@@ -138,13 +140,12 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
 
 
 def build_matching_state(
-    matching: Dict[str, str],
-    proposed_edges: List[dict] = None,
-    matched_edges: List[Tuple[str, str]] = None,
-    rejected_edges: List[dict] = None,
+    matching: List[Tuple[str, str]],
+    proposed_edges: List[dict] | None = None,
+    rejected_edges: List[dict] | None = None,
+    allocated_projects: Dict[str, List[Aluno]] | None = None,
+    free_students: List[Aluno] | None = None,
     iteration: int = 0,
-    allocated_projects: Dict[str, list] = None,
-    free_students: set = None,
 ) -> MatchingState:
     """
     Constrói um `MatchingState` a partir dos componentes do emparelhamento.
@@ -154,16 +155,11 @@ def build_matching_state(
     allocated_projects = allocated_projects or {}
     free_students = free_students or set()
 
-    if matched_edges is None:
-        matched_edges = [(a, p) for a, p in matching.items()]
-
-    state = MatchingState(
+    return  MatchingState(
         matching=matching,
-        proposed_edges=proposed_edges,
-        matched_edges=matched_edges,
-        rejected_edges=rejected_edges,
+        proposed_edges=proposed_edges or [],
+        rejected_edges=rejected_edges or [],
+        allocated_projects=allocated_projects or {},
+        free_students={a.cod for a in free_students} if free_students else set(),
         iteration=iteration,
     )
-    state.allocated_projects = allocated_projects
-    state.free_students = free_students
-    return state

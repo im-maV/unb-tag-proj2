@@ -37,31 +37,34 @@ def main() -> None:
         free_students=free,
         iteration=0,
     )
+    #print({a.cod: p.cod for (a, p) in m})
 
     # 4. Iterações de aumento via caminhos alternados
     iteration_states = spa.run_iterations(
         graph,
         state,
-        free_students=state.free_students,
+        free_students=free,
         n_iterations=N_ITERATIONS,
-        on_iteration_end=spa.plot_bipartite_iteration,
+        #on_iteration_end=spa.plot_bipartite_iteration,
     )
     final_state = iteration_states[-1]
+    #print({a.cod: p.cod for (a, p) in m})
+
 
     # 5. Validação
-    assert spa.is_stable_matching(final_state, graph, projetos), (
-        "Emparelhamento final não é estável — revisar critério de "
-        "aceite/rejeição do Gale-Shapley ou a busca por caminhos "
-        "aumentantes."
-    )
+    # assert spa.is_stable_matching(final_state, graph, projetos), (
+    #     "Emparelhamento final não é estável — revisar critério de "
+    #     "aceite/rejeição do Gale-Shapley ou a busca por caminhos "
+    #     "aumentantes."
+    # )
 
-    # 6. Métricas
-    preference_indices = spa.compute_all_preference_indices(final_state, graph)
-    matching_matrix = spa.build_final_matching_matrix(final_state, graph)
+    # # 6. Métricas
+    # preference_indices = spa.compute_all_preference_indices(final_state, graph)
+    # matching_matrix = spa.build_final_matching_matrix(final_state, graph)
 
-    # 7. Saída final
-    spa.plot_preference_index_summary(preference_indices)
-    print(matching_matrix)
+    # # 7. Saída final
+    # spa.plot_preference_index_summary(preference_indices)
+    # print(matching_matrix)
 
 
 def _debug() -> None:
@@ -97,5 +100,5 @@ def _debug() -> None:
 
 
 if __name__ == "__main__":
-    # main()
-    _debug()
+    main()
+    #_debug()

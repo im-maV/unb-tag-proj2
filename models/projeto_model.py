@@ -1,7 +1,7 @@
 """Modelo Projeto para projetos disponíveis no sistema de alocação SPA."""
 
 import bisect
-import models.aluno_model
+from models.aluno_model import Aluno
 
 
 class Projeto:
@@ -14,10 +14,10 @@ class Projeto:
     """
 
     def __init__(self, cod, num_vagas, nota_min):
-        self.cod = cod
-        self.num_vagas = num_vagas
-        self.nota_min = nota_min
-        self.aluno_aceitos: list[models.aluno_model.Aluno] = []
+        self.cod: str = cod
+        self.num_vagas: str = num_vagas
+        self.nota_min: int = nota_min
+        self.aluno_aceitos: list[Aluno] = []
 
     def tem_vaga(self) -> bool:
         """Retorna True se o projeto ainda tem vagas disponíveis."""
@@ -27,13 +27,13 @@ class Projeto:
         """Retorna True se a nota atende ao requisito mínimo do projeto."""
         return nota >= self.nota_min
 
-    def pior_aluno(self) -> "models.aluno_model.Aluno | None":
+    def pior_aluno(self):
         """Retorna o aluno de menor nota aceito ou None se vazio."""
         if not self.aluno_aceitos:
             return None
         return min(self.aluno_aceitos, key=lambda a: a.nota)
 
-    def inserir_aluno(self, aluno: "models.aluno_model.Aluno") -> None:
+    def inserir_aluno(self, aluno: Aluno):
         """Insere aluno mantendo ordem decrescente de nota (melhor primeiro)."""
         notas = [-a.nota for a in self.aluno_aceitos]
         pos = bisect.bisect_right(notas, -aluno.nota)
