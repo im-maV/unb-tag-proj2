@@ -90,6 +90,11 @@ def _debug() -> None:
     for a, p, data in graph.edges(data=True):
         print(f"  {a} -> {p} | pref={data['preferencia']}")
 
+    matrix = spa.build_final_matching_matrix(state, graph)
+    spa.save_matching_matrix_csv(matrix, "output/final_matching_matrix.csv")
+    print("\n=== Matriz de Emparelhamento ===")
+    print(matrix.to_string(index=False))
+
 
 if __name__ == "__main__":
     # main()
