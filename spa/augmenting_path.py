@@ -7,12 +7,12 @@ partir dos alunos que ficaram sem projeto na rodada anterior.
 """
 
 import copy
-import networkx as nx
 from collections import deque
+from typing import Callable, Deque, Tuple
+import networkx as nx
 from models.aluno_model import Aluno
-from models.projeto_model import Projeto
 from models.matching_model import MatchingState
-from typing import Callable, List, Deque, Tuple
+from models.projeto_model import Projeto
 
 Node = Aluno | Projeto
 
@@ -25,7 +25,7 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
     Retorna a sequência de vértices do caminho, ou None se não existir.
     """
     # Fila que contém o nó atual e uma lista com o caminho percorrido
-    queue: Deque[Tuple[Node, List[Node]]] = deque([(start_student, [start_student])])
+    queue: Deque[Tuple[Node, list[Node]]] = deque([(start_student, [start_student])])
     visited: set[Node] = {start_student}
 
     while queue:
@@ -60,7 +60,7 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
     return None
 
 
-def augment_matching(path: List[Node], state: MatchingState) -> None:
+def augment_matching(path: list[Node], state: MatchingState) -> None:
     """
     Aplica a operação de augmentação sobre o emparelhamento atual: inverte
     o status (dentro/fora de M) de cada aresta do caminho encontrado,
@@ -72,8 +72,11 @@ def augment_matching(path: List[Node], state: MatchingState) -> None:
 
         # Checa tipo
         if isinstance(node_a, Aluno):
+            assert isinstance(node_b, Projeto)
             student, project = node_a, node_b
         else:
+            assert isinstance(node_a, Projeto)
+            assert isinstance(node_b, Aluno)
             project, student = node_a, node_b
 
         # Checa se a aresta já existe, se sim inverte para cobrir todo o
@@ -90,7 +93,6 @@ def augment_matching(path: List[Node], state: MatchingState) -> None:
 def run_iterations(
     graph: nx.Graph,
     initial_state: MatchingState,
-    # free_students: List[Aluno],
     n_iterations: int = 10,
     on_iteration_end: Callable[[MatchingState, dict, int], None] | None = None,
 ):

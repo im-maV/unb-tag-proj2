@@ -9,7 +9,7 @@ class Aluno:
     (até 3), e nota agregada (3, 4 ou 5).
     """
 
-    def __init__(self, cod: str, projetos: list[str], nota: str):
+    def __init__(self, cod: str, projetos: list[str], nota: int):
         self.cod = cod
         self.preferencia = projetos
         self.nota = nota

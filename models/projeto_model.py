@@ -13,10 +13,10 @@ class Projeto:
     posteriormente pelo graph_builder).
     """
 
-    def __init__(self, cod, num_vagas, nota_min):
-        self.cod: str = cod
-        self.num_vagas: str = num_vagas
-        self.nota_min: int = nota_min
+    def __init__(self, cod: str, num_vagas: int, nota_min: int):
+        self.cod = cod
+        self.num_vagas = num_vagas
+        self.nota_min = nota_min
         self.aluno_aceitos: list[Aluno] = []
 
     def tem_vaga(self) -> bool:
@@ -27,13 +27,13 @@ class Projeto:
         """Retorna True se a nota atende ao requisito mínimo do projeto."""
         return nota >= self.nota_min
 
-    def pior_aluno(self):
+    def pior_aluno(self) -> Aluno | None:
         """Retorna o aluno de menor nota aceito ou None se vazio."""
         if not self.aluno_aceitos:
             return None
         return min(self.aluno_aceitos, key=lambda a: a.nota)
 
-    def inserir_aluno(self, aluno: Aluno):
+    def inserir_aluno(self, aluno: Aluno) -> None:
         """Insere aluno mantendo ordem decrescente de nota (melhor primeiro)."""
         notas = [-a.nota for a in self.aluno_aceitos]
         pos = bisect.bisect_right(notas, -aluno.nota)
