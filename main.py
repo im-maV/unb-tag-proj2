@@ -13,8 +13,8 @@ main.py
 
 import spa
 
-# INPUT_FILE_PATH = "data/entradaProj2.26TAG.txt"
-INPUT_FILE_PATH = "data/small_data1.txt"
+INPUT_FILE_PATH = "data/entradaProj2.26TAG.txt"
+#INPUT_FILE_PATH = "data/small_data1.txt"
 N_ITERATIONS = 10
 
 
@@ -43,7 +43,6 @@ def main() -> None:
     iteration_states = spa.run_iterations(
         graph,
         state,
-        free_students=free,
         n_iterations=N_ITERATIONS,
         #on_iteration_end=spa.plot_bipartite_iteration,
     )

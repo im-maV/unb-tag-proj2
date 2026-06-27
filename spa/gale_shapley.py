@@ -18,7 +18,7 @@ def propose(
     projetos: list[Projeto],
     free_alunos: Deque[Aluno],
     matching: List[Tuple[Aluno, Projeto]],
-    rejects_edges: list[Dict],
+    rejected_edges: list[Dict],
 ) -> None:
     """
     Faz o aluno propor ao próximo projeto em sua lista de preferência.
@@ -42,11 +42,11 @@ def propose(
             ]
             # reject_aluno.prox_preferencia
             free_alunos.append(reject_aluno)
-            rejects_edges.append({"aluno": reject_aluno.cod, "projeto": projeto_cod})
+            rejected_edges.append({"aluno": reject_aluno.cod, "projeto": projeto_cod})
     else:
         if aluno.tem_mais_preferencias():
             free_alunos.append(aluno)
-        rejects_edges.append({"aluno": aluno.cod, "projeto": projeto_cod})
+        rejected_edges.append({"aluno": aluno.cod, "projeto": projeto_cod})
 
 
 def buscar_projeto(projetos: list[Projeto], cod: str) -> Projeto | None:
@@ -109,18 +109,18 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
     return:
         matching:           lista de pares (Aluno, Projeto) - onde Aluno e Projeto são objetos
         alunos_emparelhados: lista de alunos alocados
-        rejects_edges:      lista de rejeições
+        rejected_edges:      lista de rejeições
         allocated_projects: dict projeto -> lista de alunos aceitos
         free_students:      lista de objetos Aluno sem alocação
     """
     alunos = sorted(alunos, key=lambda a: int(a.cod[1:]))
     free_alunos = deque(alunos)
     matching: List[Tuple[Aluno, Projeto]] = []
-    rejects_edges = []
+    rejected_edges = []
 
     while free_alunos:
         aluno = free_alunos.popleft()
-        propose(aluno, projetos, free_alunos, matching, rejects_edges)
+        propose(aluno, projetos, free_alunos, matching, rejected_edges)
 
     alunos_emparelhados = {a for a,p in matching}
     sem_alunos = verificar_minimo_por_projeto(projetos, matching)
@@ -128,12 +128,13 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
         print(f"[AVISO] Projetos sem nenhum aluno alocado: {sem_alunos}")
 
     allocated_projects = {proj.cod: proj.aluno_aceitos for proj in projetos}
-    free_students: list[Aluno] = [a for a in alunos if a.cod not in matching]
+    matching_cods = [a.cod for (a, p) in matching]
+    free_students: list[Aluno] = [a for a in alunos if a.cod not in matching_cods]
 
     return (
         matching,
         alunos_emparelhados,
-        rejects_edges,
+        rejected_edges,
         allocated_projects,
         free_students,
     )
@@ -150,16 +151,12 @@ def build_matching_state(
     """
     Constrói um `MatchingState` a partir dos componentes do emparelhamento.
     """
-    proposed_edges = proposed_edges or []
-    rejected_edges = rejected_edges or []
-    allocated_projects = allocated_projects or {}
-    free_students = free_students or set()
 
     return  MatchingState(
         matching=matching,
         proposed_edges=proposed_edges or [],
         rejected_edges=rejected_edges or [],
         allocated_projects=allocated_projects or {},
-        free_students={a.cod for a in free_students} if free_students else set(),
+        free_students=free_students or [],
         iteration=iteration,
     )
