@@ -29,8 +29,7 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
 
     while queue:
         current_node, path = queue.popleft()
-        # is_student = isinstance(current_node, Aluno)
-        is_student = current_node.__class__.__name__ == 'Aluno'
+        is_student = isinstance(current_node, Aluno)
 
         if is_student:
             aluno: Aluno = current_node
@@ -44,8 +43,7 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
             if state.has_capacity(project):
                 return path
 
-            # allocated_students = state.get_allocated_students(project)
-            allocated_students = state.allocated_projects.get(current_node, [])
+            allocated_students = state.get_allocated_students(project)
 
             for alloc_student in allocated_students:
                 if alloc_student not in visited:
