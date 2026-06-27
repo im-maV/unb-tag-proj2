@@ -38,7 +38,7 @@ class MatchingState:
         proposed_edges: List[Dict], 
         rejected_edges: List[Dict], 
         allocated_projects: Dict[str, List[Aluno]],
-        free_students: Set[str],
+        free_students: List[Aluno],
         iteration=0
     ):
         self.iteration = iteration
