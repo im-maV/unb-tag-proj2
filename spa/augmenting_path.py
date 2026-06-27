@@ -12,9 +12,10 @@ from collections import deque
 from models.aluno_model import Aluno
 from models.projeto_model import Projeto
 from models.matching_model import MatchingState
-from typing import Callable, List, Deque, Tuple 
+from typing import Callable, List, Deque, Tuple
 
 Node = Aluno | Projeto
+
 
 def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingState):
     """
@@ -37,7 +38,9 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
                 if not state.is_matched(aluno, project):
                     # Se o projeto tem nota min e o aluno não cumpre - Proposta NEGADA
                     if project and (aluno.nota < project.nota_min):
-                        state.rejected_edges.append({"aluno": aluno.cod, "projeto": project.cod})
+                        state.rejected_edges.append(
+                            {"aluno": aluno.cod, "projeto": project.cod}
+                        )
                         continue
 
                     if project not in visited:
@@ -78,15 +81,16 @@ def augment_matching(path: List[Node], state: MatchingState) -> None:
         if state.is_matched(student, project):
             state.remove_pair(student, project)
             # adiciona aresta removida ao reject_edges (REJEIÇAO)
-            state.rejected_edges.append({'aluno': student.cod, 'projeto': project.cod})
+            state.rejected_edges.append({"aluno": student.cod, "projeto": project.cod})
         # se não, adicionamos a aresta ao state (primeira e última do caminho)
         else:
             state.add_pair(student, project)
 
+
 def run_iterations(
     graph: nx.Graph,
     initial_state: MatchingState,
-    #free_students: List[Aluno],
+    # free_students: List[Aluno],
     n_iterations: int = 10,
     on_iteration_end: Callable[[MatchingState, dict, int], None] | None = None,
 ):
@@ -116,7 +120,7 @@ def run_iterations(
 
     for iteration in range(1, n_iterations + 1):
         current_state.iteration = iteration
-        #Limpa logs da iteração anterior
+        # Limpa logs da iteração anterior
         current_state.proposed_edges = []
         current_state.rejected_edges = []
 
@@ -128,13 +132,12 @@ def run_iterations(
             found_augmeting_path = find_augmenting_path(student, graph, current_state)
             if found_augmeting_path:
                 break
-        
 
         if found_augmeting_path:
-             # Adiciona caminho (Separa as arestas de IDA - [(Aluno -> Projeto)]) 
+            # Adiciona caminho (Separa as arestas de IDA - [(Aluno -> Projeto)])
             for idx in range(0, len(found_augmeting_path) - 1, 2):
-                    u, v = found_augmeting_path[idx], found_augmeting_path[idx+1]
-                    current_state.proposed_edges.append({'aluno': u.cod, 'projeto': v.cod})
+                u, v = found_augmeting_path[idx], found_augmeting_path[idx + 1]
+                current_state.proposed_edges.append({"aluno": u.cod, "projeto": v.cod})
 
             # Log visual
             iteration_log = {
@@ -149,7 +152,6 @@ def run_iterations(
 
             # Aplica Caminho M-Aumentanate
             augment_matching(found_augmeting_path, current_state)
-
 
         # adiciona o estado dessa iteração no histórico
         state_history.append(copy.deepcopy(current_state))
