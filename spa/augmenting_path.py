@@ -24,12 +24,13 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
     Retorna a sequência de vértices do caminho, ou None se não existir.
     """
     # Fila que contém o nó atual e uma lista com o caminho percorrido
-    queue: Deque[Tuple[Node, List[Node]]] = deque([(start_student, [start_student])])
+    queue: Deque[Tuple[Node, List[Node]]] = deque([((start_student, [start_student]))])
     visited: set[Node] = {start_student}
 
     while queue:
         current_node, path = queue.popleft()
-        is_student = isinstance(current_node, Aluno)
+        # is_student = isinstance(current_node, Aluno)
+        is_student = current_node.__class__.__name__ == 'Aluno'
 
         if is_student:
             aluno: Aluno = current_node
@@ -43,7 +44,8 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
             if state.has_capacity(project):
                 return path
 
-            allocated_students = state.get_allocated_students(project)
+            # allocated_students = state.get_allocated_students(project)
+            allocated_students = state.allocated_projects.get(current_node, [])
 
             for alloc_student in allocated_students:
                 if alloc_student not in visited:
@@ -105,10 +107,19 @@ def run_iterations(
     posterior (ex: matriz final, índice de preferência).
     """
     state_history: list[MatchingState] = []
-    current_state = copy.deepcopy(initial_state)
+    current_state = initial_state
 
     for iteration in range(1, n_iterations + 1):
         current_state.iteration = iteration
+
+        # isso é desnecessário se a função já receber o dicionário free students,
+        # que pode ser implemntada no galey shapley com um 
+        # free_students.append(aluno_ainda_nao_emparelhado) 
+        free_students = [
+             node for node in graph.nodes
+             if isinstance(node, Aluno) and node not in current_state.matching
+        ]
+
 
         free_students.sort(key=lambda x: x.cod)
 
@@ -128,9 +139,14 @@ def run_iterations(
         # callback
         if on_iteration_end is not None:
             on_iteration_end(current_state, interation_log, iteration)
+        
+        snapshot = {
+            'iteration': iteration,
+            'matching': current_state.matching.copy(),
+            'allocated_projects': {p: list(alunos) for p, alunos in current_state.allocated_projects.items()}
+        }
 
         # adiciona o estado dessa iteração no histórico
-        state_history.append(copy.deepcopy(current_state))
-        print(f"{iteration}:\n{current_state}")
-
+        state_history.append(snapshot)
+    
     return state_history
