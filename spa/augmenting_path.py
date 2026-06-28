@@ -91,6 +91,7 @@ def run_iterations(
     graph: nx.Graph,
     initial_state: MatchingState,
     # free_students: List[Aluno],
+    all_alunos: List[Aluno],
     n_iterations: int = 10,
     on_iteration_end: Callable[[MatchingState, dict, int], None] | None = None,
 ):
@@ -119,13 +120,13 @@ def run_iterations(
     current_state = copy.deepcopy(initial_state)
 
     for iteration in range(1, n_iterations + 1):
+        print(f"Iteração[{iteration}] ---- INÍCIO: Tamanho do Matching: {len(current_state.matching)} / Free_Alunos: {len(current_state.free_students)}")
         current_state.iteration = iteration
         # Limpa logs da iteração anterior
         current_state.proposed_edges = []
         current_state.rejected_edges = []
 
-        free_students = list(current_state.free_students)
-        free_students.sort(key=lambda x: x.cod)
+        free_students = sorted(current_state.free_students, key=lambda x: x.cod)
         found_augmeting_path = None
 
         for student in free_students:
@@ -139,22 +140,26 @@ def run_iterations(
                 u, v = found_augmeting_path[idx], found_augmeting_path[idx + 1]
                 current_state.proposed_edges.append({"aluno": u.cod, "projeto": v.cod})
 
-            # Log visual
-            iteration_log = {
-                "matched_edges": [(s, p) for s, p in current_state.matching],
-                "proposed_edges": current_state.proposed_edges,
-                "rejected_edges": current_state.rejected_edges,
-            }
+        # Log visual
+        iteration_log = {
+            "matched_edges": [(s, p) for s, p in current_state.matching],
+            "proposed_edges": current_state.proposed_edges,
+            "rejected_edges": current_state.rejected_edges,
+        }
 
-            # callback
-            if on_iteration_end is not None:
-                on_iteration_end(current_state, iteration_log, iteration)
+        # Callback
+        if on_iteration_end is not None:
+            on_iteration_end(current_state, iteration_log, iteration)
 
-            # Aplica Caminho M-Aumentanate
+        # Aplica Caminho M-Aumentanate
+        if found_augmeting_path:
             augment_matching(found_augmeting_path, current_state)
+    
+        # Atualiza free_students com base no matching resultante desta iteração
+        current_state.update_free_students(all_alunos)
 
         # adiciona o estado dessa iteração no histórico
         state_history.append(copy.deepcopy(current_state))
-        print(f"Iteração[{iteration}]:\n{current_state}")
+        print(f"Iteração[{iteration}] ---- FIM: Tamanho do Matching: {len(current_state.matching)}/ Free_Alunos: {len(current_state.free_students)}")
 
     return state_history
