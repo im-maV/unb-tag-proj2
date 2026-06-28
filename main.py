@@ -14,6 +14,8 @@ main.py
 from functools import partial
 import spa
 
+# from tests.test_augmenting import executar_teste
+
 INPUT_FILE_PATH = "data/entradaProj2.26TAG.txt"
 N_ITERATIONS = 10
 
@@ -58,6 +60,7 @@ def main() -> None:
     iteration_states = spa.run_iterations(
         graph,
         state,
+        all_alunos=alunos,
         n_iterations=N_ITERATIONS,
         on_iteration_end=plot_iteration,
     )
@@ -84,3 +87,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    # executar_teste()

@@ -84,8 +84,12 @@ class MatchingState:
         alocados = self.allocated_projects.get(projeto.cod, [])
         if aluno in alocados:
             alocados.remove(aluno)
-        if aluno not in self.free_students:
-            self.free_students.append(aluno)
+        self.free_students.append(aluno)
+
+    def update_free_students(self, all_students: list[Aluno]) -> None:
+        """Recomputa free_students comparando todos os alunos com o índice atual."""
+        matched_cods = set(self._index.keys())
+        self.free_students = [a for a in all_students if a.cod not in matched_cods]
 
     def __deepcopy__(self, memo: dict) -> MatchingState:
         """
