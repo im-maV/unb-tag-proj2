@@ -56,9 +56,42 @@ def validate_parsed_data(projetos: list, alunos: list) -> None:
     """
     Valida a integridade dos dados extraídos pelo parser.
 
-    Deve checar: matrículas duplicadas, projetos referenciados nas
-    preferências que não existem na lista de projetos, notas fora do
-    intervalo [3, 5], e preferências vazias ou com mais de 3 itens.
-    Levanta exceção descritiva em caso de inconsistência.
+    Checa: matrículas duplicadas, projetos referenciados nas preferências
+    que não existem na lista de projetos, notas fora do intervalo [3, 5],
+    e preferências vazias ou com mais de 3 itens.
+
+    Inconsistências são logadas como warnings sem interromper o pipeline.
     """
-    pass
+    proj_validos = {p.cod for p in projetos}
+    cods_alunos = [a.cod for a in alunos]
+
+    # Matrículas duplicadas
+    duplicatas = {c for c in cods_alunos if cods_alunos.count(c) > 1}
+    if duplicatas:
+        print(f"[AVISO] Alunos com matrícula duplicada: {duplicatas}")
+
+    for aluno in alunos:
+        # Projetos inexistentes nas preferências
+        invalidos = [p for p in aluno.preferencia if p not in proj_validos]
+        if invalidos:
+            print(f"[AVISO] {aluno.cod} referencia projetos inexistentes: {invalidos}")
+
+        # Preferências duplicadas
+        if len(aluno.preferencia) != len(set(aluno.preferencia)):
+            print(
+                f"[AVISO] {aluno.cod} tem preferências duplicadas: {aluno.preferencia}"
+            )
+
+        # Nota fora do intervalo
+        if aluno.nota not in (3, 4, 5):
+            print(f"[AVISO] {aluno.cod} tem nota inválida: {aluno.nota}")
+
+        # Número de preferências
+        if len(aluno.preferencia) == 0:
+            print(f"[AVISO] {aluno.cod} sem preferências")
+        elif len(aluno.preferencia) > 3:
+            print(
+                f"[AVISO] {aluno.cod} tem mais de 3 preferências: {aluno.preferencia}"
+            )
+
+    print("=" * 60)

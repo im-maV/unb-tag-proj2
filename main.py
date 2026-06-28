@@ -25,7 +25,7 @@ def main() -> None:
 
     # 1. Parsing
     projetos, alunos = spa.parse_input_file(INPUT_FILE_PATH)
-    # validate_parsed_data(projetos, alunos)
+    spa.validate_parsed_data(projetos, alunos)
 
     # 2. Construção do grafo bipartido
     graph = spa.build_bipartite_graph(projetos, alunos)
