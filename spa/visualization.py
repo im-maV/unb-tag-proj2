@@ -19,7 +19,15 @@ from models.matching_model import MatchingState
 from models.projeto_model import Projeto
 from spa.graph_builder import get_bipartite_sets
 
-matplotlib.use("Agg")
+try:
+    from IPython import get_ipython  # type: ignore
+
+    shell = get_ipython()
+    if shell is None:
+        matplotlib.use("Agg")
+except (ImportError, NameError):
+    matplotlib.use("Agg")
+
 EdgePair = tuple[str, str]
 
 Node = Aluno | Projeto

@@ -1,3 +1,4 @@
-networkx
-matplotlib
-pandas
+networkx==3.6.1
+matplotlib==3.11.0
+pandas==3.0.3
+notebook>=7.0
