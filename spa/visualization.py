@@ -14,7 +14,9 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 import networkx as nx
-from models import MatchingState, Projeto, Aluno
+from models.aluno_model import Aluno
+from models.matching_model import MatchingState
+from models.projeto_model import Projeto
 from spa.graph_builder import get_bipartite_sets
 
 matplotlib.use("Agg")

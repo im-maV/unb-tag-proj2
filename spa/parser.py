@@ -8,7 +8,8 @@ pipeline
 """
 
 import re
-from models import Projeto, Aluno
+from models.aluno_model import Aluno
+from models.projeto_model import Projeto
 
 
 def parse_input_file(filepath: str):
