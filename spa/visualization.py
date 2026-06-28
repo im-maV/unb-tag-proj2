@@ -6,164 +6,351 @@ visualizações auxiliares (índice de preferência, matriz final).
 """
 
 from pathlib import Path
-from typing import Any, Mapping, Sequence, Set, Tuple
+import re
+from typing import Any, Mapping
 
 import matplotlib
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import networkx as nx
 
-from matplotlib.lines import Line2D
+import networkx as nx
+from models import MatchingState, Projeto, Aluno
 from spa.graph_builder import get_bipartite_sets
 
 matplotlib.use("Agg")
-EdgePair = Tuple[str, str]
+EdgePair = tuple[str, str]
 
+Node = Aluno | Projeto
 OUTPUT_DIR = Path("output")
 
-# Cores das arestas
-COLOR_PROPOSED = "#f3d364"
-COLOR_MATCHED = "#5ba8b5"
-COLOR_REJECTED = "#f05a3e"
-COLOR_NEUTRAL = "#B0Bac4"
 
-# Cores dos nós
-COLOR_STUDENT = "#16426c"
-COLOR_PROJECT = "#0d2b35"
+class VisualConfig:
+    """Configuração de visualização."""
 
+    # Cores das arestas
+    C_PROPOSED = "#EEBF1D"
+    C_MATCHED = "#5ba8b5"
+    C_REJECTED = "#D12F10"
+    C_NEUTRAL = "#94a3b8"
 
-def _normalize_edge(edge: tuple[Any, Any]) -> EdgePair:
-    return tuple(sorted((str(edge[0]), str(edge[1]))))
+    # Cores dos nós
+    C_STUDENT = "#16426c"
+    C_PROJECT = "#0d2b35"
 
+    C_TEXT_MAIN = "#0f172a"
+    C_TEXT_MUTED = "#334155"
+    C_BORDER = "#94a3b8"
+    C_BG_PANEL = "#f1f5f9"
 
-def _extract_edge_pairs(raw_edges: Any) -> Set[EdgePair]:
-    edges: Set[EdgePair] = set()
-    if raw_edges is None:
-        return edges
+    ALPHA = {C_MATCHED: 0.95, C_PROPOSED: 0.90, C_REJECTED: 0.75, C_NEUTRAL: 0.25}
+    WIDTH = {C_MATCHED: 2.6, C_PROPOSED: 2.2, C_REJECTED: 1.4, C_NEUTRAL: 0.6}
 
-    if isinstance(raw_edges, dict):
-        raw_edges = [raw_edges]
-
-    if isinstance(raw_edges, Sequence) and not isinstance(raw_edges, (str, bytes)):
-        for item in raw_edges:
-            if isinstance(item, tuple) and len(item) == 2:
-                edges.add(_normalize_edge(item))
-            elif isinstance(item, dict):
-                aluno = item.get("aluno") or item.get("student")
-                projeto = item.get("projeto") or item.get("project")
-                if aluno is not None and projeto is not None:
-                    edges.add(_normalize_edge((aluno, projeto)))
-    return edges
+    INCHES_PER_NODE = 0.42
+    FIG_WIDTH = 18.0
 
 
-def _ensure_output_dir() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+class BipartiteLayout:
+    """
+    Layout para grafo bipartido, com alunos à direita e projetos à esquerda.
+    A altura do layout é proporcional ao número máximo de nós em cada conjunto.
+    """
+
+    def __init__(self, students: list[Aluno], projects: list[Projeto]):
+        self.students = students
+        self.projects = projects
+        self.n_max = max(len(students), len(projects), 1)
+
+    @property
+    def height(self) -> float:
+        """Altura do layout em polegadas, proporcional ao número de nós."""
+        return max(16.0, self.n_max * VisualConfig.INCHES_PER_NODE)
+
+    def get_positions(self) -> dict[Node, tuple[float, float]]:
+        """Retorna o dicionário de posições (x, y) para cada nó do grafo."""
+        step = self.height / self.n_max
+        pos: dict[Node, tuple[float, float]] = {}
+
+        for i, node in enumerate(self.students):
+            pos[node] = (1.0, -i * step)
+        for i, node in enumerate(self.projects):
+            pos[node] = (0.0, -i * step)
+
+        return pos
+
+
+def get_node_id(node: Node) -> str:
+    """Extrai o identificador de texto único (matrícula ou código) de um nó do grafo."""
+    val = getattr(node, "cod", node)
+    return str(val)
+
+
+def sort_node_key(node: Node) -> list[int | str]:
+    """Extrai o identificador de texto único (matrícula ou código) de um nó do grafo."""
+    return [
+        int(text) if text.isdigit() else text.lower()
+        for text in re.split(r"(\d+)", get_node_id(node))
+    ]
+
+
+def _normalize_edge(edge: tuple[Node, Node]) -> EdgePair:
+    u, v = edge
+    cod_u = get_node_id(u)
+    cod_v = get_node_id(v)
+    return (cod_u, cod_v) if cod_u <= cod_v else (cod_v, cod_u)
 
 
 def _save_figure(filename: str) -> None:
-    _ensure_output_dir()
-    path = OUTPUT_DIR / filename
-    plt.savefig(path, bbox_inches="tight")
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(OUTPUT_DIR / filename, dpi=140, bbox_inches="tight")
     plt.close()
 
 
-def get_edge_colors(graph: nx.Graph, state: Any) -> Mapping[EdgePair, str]:
-    """Retorna o dicionário de cores para cada aresta do grafo."""
-    matched = _extract_edge_pairs(getattr(state, "matched_edges", None))
-    rejected = _extract_edge_pairs(getattr(state, "rejected_edges", None))
-    proposed = _extract_edge_pairs(getattr(state, "proposed_edges", None))
+def _extract_edge_pairs(raw_edges: Any) -> set[EdgePair]:
+    if not raw_edges:
+        return set()
+
+    if isinstance(raw_edges, dict):
+        return {
+            _normalize_edge((u, v))
+            for u, v in raw_edges.items()
+            if u is not None and v is not None
+        }
+
+    pairs = set()
+    for item in raw_edges:
+        ends = _get_edge_ends(item)
+        if ends:
+            pairs.add(_normalize_edge(ends))
+    return pairs
+
+
+def _get_edge_ends(item: Any) -> tuple[Any, Any] | None:
+    if isinstance(item, tuple) and len(item) == 2:
+        return item[0], item[1]
+    if isinstance(item, dict):
+        u = item.get("aluno") or item.get("student")
+        v = item.get("projeto") or item.get("project")
+        if u is not None and v is not None:
+            return u, v
+    return None
+
+
+def _get_edge_colors(
+    graph: nx.Graph,
+    state: MatchingState,
+    iteration_log: dict | None = None,
+) -> Mapping[EdgePair, str]:
+    """
+    Retorna um dicionário de cores para cada aresta do grafo,
+    baseado no estado atual do emparelhamento.
+    """
+    source = iteration_log if iteration_log is not None else state.__dict__
+
+    matched = _extract_edge_pairs(source.get("matched_edges"))
+    rejected = _extract_edge_pairs(source.get("rejected_edges"))
+    proposed = _extract_edge_pairs(source.get("proposed_edges"))
 
     colors: dict[EdgePair, str] = {}
     for u, v in graph.edges():
-        edge = _normalize_edge((u, v))
-        if edge in matched:
-            colors[edge] = COLOR_MATCHED
-        elif edge in rejected:
-            colors[edge] = COLOR_REJECTED
-        elif edge in proposed:
-            colors[edge] = COLOR_PROPOSED
+        norm_e = _normalize_edge((u, v))
+        if norm_e in matched:
+            colors[norm_e] = VisualConfig.C_MATCHED
+        elif norm_e in rejected:
+            colors[norm_e] = VisualConfig.C_REJECTED
+        elif norm_e in proposed:
+            colors[norm_e] = VisualConfig.C_PROPOSED
         else:
-            colors[edge] = COLOR_NEUTRAL
+            colors[norm_e] = VisualConfig.C_NEUTRAL
+
     return colors
 
 
-def _build_edge_color_list(
-    graph: nx.Graph, edge_colors: Mapping[EdgePair, str]
-) -> list[str]:
-    return [
-        edge_colors.get(_normalize_edge((u, v)), COLOR_NEUTRAL)
-        for u, v in graph.edges()
+def plot_bipartite_iteration(
+    state: MatchingState,
+    iteration_log: dict[str, Any] | None,
+    iteration: int,
+    graph: nx.Graph,
+) -> None:
+    """
+    Plota o grafo bipartido para uma iteração específica,
+    colorindo as arestas de acordo com o estado do emparelhamento.
+    """
+    students_raw, projects_raw = get_bipartite_sets(graph)
+    students = sorted(students_raw, key=sort_node_key)
+    projects = sorted(projects_raw, key=sort_node_key)
+
+    layout = BipartiteLayout(students, projects)
+    pos = layout.get_positions()
+    edgelist = list(graph.edges())
+
+    fig, ax = plt.subplots(figsize=(VisualConfig.FIG_WIDTH, layout.height))
+
+    color_map = _get_edge_colors(graph, state, iteration_log)
+    edges_by_color: dict[str, list] = {c: [] for c in VisualConfig.ALPHA}
+
+    for u, v in edgelist:
+        c = color_map.get(_normalize_edge((u, v)), VisualConfig.C_NEUTRAL)
+        edges_by_color[c].append((u, v))
+
+    draw_order = [
+        VisualConfig.C_NEUTRAL,
+        VisualConfig.C_REJECTED,
+        VisualConfig.C_PROPOSED,
+        VisualConfig.C_MATCHED,
     ]
 
+    for cat_color in draw_order:
+        if cat_edges := edges_by_color[cat_color]:
+            nx.draw_networkx_edges(
+                graph,
+                pos,
+                edgelist=cat_edges,
+                edge_color=cat_color,
+                width=VisualConfig.WIDTH[cat_color],
+                alpha=VisualConfig.ALPHA[cat_color],
+                style="--" if cat_color == VisualConfig.C_REJECTED else "-",
+                ax=ax,
+            )
 
-def _draw_legend() -> None:
-    legend_items = [
-        Line2D([0], [0], color=COLOR_PROPOSED, lw=4, label="Proposta ativa"),
-        Line2D([0], [0], color=COLOR_MATCHED, lw=4, label="Emparelhamento atual"),
-        Line2D([0], [0], color=COLOR_REJECTED, lw=4, label="Rejeição"),
-        Line2D([0], [0], color=COLOR_NEUTRAL, lw=4, label="Não proposta"),
+    node_configs = [
+        (projects, VisualConfig.C_PROJECT, 320, "s", 7.5),
+        (students, VisualConfig.C_STUDENT, 230, "o", 5.5),
     ]
-    plt.legend(
-        handles=legend_items, loc="upper center", bbox_to_anchor=(0.5, 1.05), ncol=4
+
+    for nodelist, color, size, shape, font_size in node_configs:
+        nx.draw_networkx_nodes(
+            graph,
+            pos,
+            nodelist=nodelist,
+            node_color=color,
+            node_size=size,
+            node_shape=shape,
+            ax=ax,
+        )
+        nx.draw_networkx_labels(
+            graph,
+            pos,
+            labels={n: get_node_id(n) for n in nodelist},
+            font_size=font_size,
+            font_color="white",
+            font_weight="bold",
+            ax=ax,
+        )
+
+    col_headers = [(0.0, "Projetos (■)"), (1.0, "Alunos (●)")]
+    for x_pos, text in col_headers:
+        ax.text(
+            x_pos,
+            1.008,
+            text,
+            color=VisualConfig.C_TEXT_MAIN,
+            fontsize=12,
+            fontweight="bold",
+            ha="center",
+            va="bottom",
+            transform=ax.transAxes,
+        )
+
+    legend_patches = [
+        mpatches.Patch(color=VisualConfig.C_MATCHED, label="Emparelhamento atual"),
+        mpatches.Patch(color=VisualConfig.C_PROPOSED, label="Proposta ativa"),
+        mpatches.Patch(color=VisualConfig.C_REJECTED, label="Rejeição"),
+        mpatches.Patch(color=VisualConfig.C_NEUTRAL, label="Não proposta"),
+        mpatches.Patch(color=VisualConfig.C_PROJECT, label="Projeto"),
+        mpatches.Patch(color=VisualConfig.C_STUDENT, label="Candidato"),
+    ]
+
+    ax.legend(
+        handles=legend_patches,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.025),
+        ncol=6,
+        frameon=True,
+        facecolor=VisualConfig.C_BG_PANEL,
+        edgecolor=VisualConfig.C_NEUTRAL,
+        fontsize=9.5,
+        labelcolor=VisualConfig.C_TEXT_MAIN,
     )
 
-
-def plot_bipartite_iteration(graph: nx.Graph, state: Any) -> None:
-    """Plota uma única iteração do grafo bipartido."""
-    edge_colors = get_edge_colors(graph, state)
-    students, projects = get_bipartite_sets(graph)
-    pos = nx.bipartite_layout(graph, projects)
-    colors = _build_edge_color_list(graph, edge_colors)
-
-    plt.figure(figsize=(10, 6))
-    nx.draw_networkx_nodes(
-        graph,
-        pos,
-        nodelist=sorted(students),
-        node_color=COLOR_STUDENT,
-        node_size=700,
-        node_shape="o",
+    n_matched = len(edges_by_color[VisualConfig.C_MATCHED])
+    iteration_number = iteration if iteration is not None else state.iteration
+    ax.set_title(
+        f"Iteração {iteration_number}  —  Alocação Atual: {n_matched} de {len(students)} Alunos",
+        color=VisualConfig.C_TEXT_MAIN,
+        fontsize=14,
+        fontweight="bold",
+        pad=35,
     )
-    nx.draw_networkx_nodes(
-        graph,
-        pos,
-        nodelist=sorted(projects),
-        node_color=COLOR_PROJECT,
-        node_size=900,
-        node_shape="o",
-    )
-    nx.draw_networkx_edges(
-        graph, pos, edgelist=list(graph.edges()), edge_color=colors, width=2
-    )
-    nx.draw_networkx_labels(graph, pos, font_size=10, font_color="white")
-    _draw_legend()
 
-    iteration = getattr(state, "iteration", "?")
-    title = "Gale-Shapley (iteração 0)" if iteration == 0 else f"Iteração {iteration}"
-    plt.title(title, pad=40)
-    plt.axis("off")
+    ax.axis("off")
     plt.tight_layout()
-    _save_figure(f"iteracao_{iteration}.png")
+    _save_figure(f"iteracao_{state.iteration}.png")
 
 
-def plot_all_iterations(graph: nx.Graph, states: Sequence[Any]) -> None:
-    """Plota todas as iterações em sequência."""
-    for state in states:
-        plot_bipartite_iteration(graph, state)
-
-
-def plot_preference_index_summary(preference_indices: Mapping[str, float]) -> None:
+def plot_preference_index_summary(preference_indices: Mapping[Projeto, float]) -> None:
     """Desenha o gráfico de barras do índice de preferência por projeto."""
     if not preference_indices:
         return
 
-    codes = sorted(preference_indices)
-    values = [preference_indices[code] for code in codes]
+    items = sorted(preference_indices.items(), key=lambda kv: sort_node_key(kv[0]))
+    codes, values = zip(*[(get_node_id(k), v) for k, v in items])
 
-    plt.figure(figsize=(10, 5))
-    plt.bar(codes, values, color="#1ABC9C")
-    plt.xlabel("Projeto")
-    plt.ylabel("Índice de preferência")
-    plt.title("Índice de preferência por projeto")
-    plt.grid(axis="y", alpha=0.3)
+    fig, ax = plt.subplots(figsize=(15, 5.5))
+
+    bars = ax.bar(codes, values, color=VisualConfig.C_MATCHED, width=0.65, zorder=3)
+    ax.axhline(
+        y=1.0,
+        color=VisualConfig.C_REJECTED,
+        linestyle="--",
+        alpha=0.8,
+        label="Preferência Máxima Ideal (1.0)",
+        zorder=4,
+    )
+
+    for rectangle, val in zip(bars, values):
+        ax.text(
+            rectangle.get_x() + rectangle.get_width() / 2,
+            rectangle.get_height() + 0.03,
+            f"{val:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=7.5,
+            color=VisualConfig.C_TEXT_MUTED,
+            fontweight="bold",
+        )
+
+    ax.set_xlabel(
+        "Código do Projeto",
+        fontweight="bold",
+        color=VisualConfig.C_TEXT_MAIN,
+        labelpad=10,
+    )
+    ax.set_ylabel(
+        "Índice Médio de Preferência",
+        fontweight="bold",
+        color=VisualConfig.C_TEXT_MAIN,
+        labelpad=10,
+    )
+    ax.set_title(
+        "Índice de Preferência Agregado por Projeto",
+        color=VisualConfig.C_TEXT_MAIN,
+        fontsize=13,
+        fontweight="bold",
+        pad=15,
+    )
+
+    ax.tick_params(colors=VisualConfig.C_TEXT_MUTED)
+    ax.spines[:].set_color(VisualConfig.C_BORDER)
+    ax.grid(axis="y", linestyle=":", alpha=0.6, color=VisualConfig.C_BORDER, zorder=0)
+
+    ax.set_xticks(range(len(codes)))
+    ax.set_xticklabels(codes, rotation=45, ha="right", fontsize=8.5)
+    ax.legend(
+        fontsize=9.5,
+        labelcolor=VisualConfig.C_TEXT_MAIN,
+        facecolor=VisualConfig.C_BG_PANEL,
+        edgecolor=VisualConfig.C_NEUTRAL,
+    )
+
     plt.tight_layout()
     _save_figure("preference_index.png")

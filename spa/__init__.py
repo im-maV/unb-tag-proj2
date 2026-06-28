@@ -19,7 +19,8 @@ from spa.metrics import (
     save_matching_matrix_csv,
 )
 from spa.visualization import (
-    plot_all_iterations,
+    get_node_id,
+    sort_node_key,
     plot_bipartite_iteration,
     plot_preference_index_summary,
 )

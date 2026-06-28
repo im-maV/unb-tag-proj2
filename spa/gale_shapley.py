@@ -7,7 +7,7 @@ Student-Project Allocation (SPA), baseada em Abraham, Irving & Manlove
 """
 
 from collections import deque
-from typing import Dict, Tuple, Deque
+from typing import Deque
 from models.aluno_model import Aluno
 from models.matching_model import MatchingState
 from models.projeto_model import Projeto
@@ -17,8 +17,8 @@ def propose(
     aluno: Aluno,
     projetos: list[Projeto],
     free_alunos: Deque[Aluno],
-    matching: list[Tuple[Aluno, Projeto]],
-    rejected_edges: list[Dict],
+    matching: list[tuple[Aluno, Projeto]],
+    rejected_edges: list[dict],
 ) -> None:
     """
     Faz o aluno propor ao próximo projeto em sua lista de preferência.
@@ -89,7 +89,7 @@ def evaluate_proposal(p_cod: str, aluno: Aluno, projetos: list[Projeto]):
 
 
 def verificar_minimo_por_projeto(
-    projetos: list[Projeto], matching: list[Tuple[Aluno, Projeto]]
+    projetos: list[Projeto], matching: list[tuple[Aluno, Projeto]]
 ) -> list[str]:
     """
     Cada projeto deve ter ao menos 1 aluno.
@@ -117,7 +117,7 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
     """
     alunos = sorted(alunos, key=lambda a: int(a.cod[1:]))
     free_alunos = deque(alunos)
-    matching: list[Tuple[Aluno, Projeto]] = []
+    matching: list[tuple[Aluno, Projeto]] = []
     rejected_edges = []
 
     while free_alunos:
@@ -143,7 +143,7 @@ def run_gale_shapley(projetos: list[Projeto], alunos: list[Aluno]):
 
 
 def build_matching_state(
-    matching: list[Tuple[Aluno, Projeto]],
+    matching: list[tuple[Aluno, Projeto]],
     proposed_edges: list[dict] | None = None,
     rejected_edges: list[dict] | None = None,
     allocated_projects: dict[str, list[Aluno]] | None = None,

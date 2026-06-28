@@ -8,7 +8,7 @@ partir dos alunos que ficaram sem projeto na rodada anterior.
 
 import copy
 from collections import deque
-from typing import Callable, Deque, Tuple
+from typing import Callable, Deque
 import networkx as nx
 from models.aluno_model import Aluno
 from models.matching_model import MatchingState
@@ -25,7 +25,7 @@ def find_augmenting_path(start_student: Aluno, graph: nx.Graph, state: MatchingS
     Retorna a sequência de vértices do caminho, ou None se não existir.
     """
     # Fila que contém o nó atual e uma lista com o caminho percorrido
-    queue: Deque[Tuple[Node, list[Node]]] = deque([(start_student, [start_student])])
+    queue: Deque[tuple[Node, list[Node]]] = deque([(start_student, [start_student])])
     visited: set[Node] = {start_student}
 
     while queue:
@@ -141,18 +141,19 @@ def run_iterations(
                 u, v = found_augmeting_path[idx], found_augmeting_path[idx + 1]
                 current_state.proposed_edges.append({"aluno": u.cod, "projeto": v.cod})
 
-            # Log visual
-            iteration_log = {
-                "matched_edges": [(s, p) for s, p in current_state.matching],
-                "proposed_edges": current_state.proposed_edges,
-                "rejected_edges": current_state.rejected_edges,
-            }
+        # Log visual
+        iteration_log = {
+            "matched_edges": [(s, p) for s, p in current_state.matching],
+            "proposed_edges": current_state.proposed_edges,
+            "rejected_edges": current_state.rejected_edges,
+        }
 
-            # callback
-            if on_iteration_end is not None:
-                on_iteration_end(current_state, iteration_log, iteration)
+        # callback
+        if on_iteration_end is not None:
+            on_iteration_end(current_state, iteration_log, iteration)
 
-            # Aplica Caminho M-Aumentanate
+        # Aplica Caminho M-Aumentanate
+        if found_augmeting_path:
             augment_matching(found_augmeting_path, current_state)
 
         # adiciona o estado dessa iteração no histórico
