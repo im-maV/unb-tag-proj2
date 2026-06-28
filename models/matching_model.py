@@ -1,9 +1,9 @@
 """Modelos de emparelhamento para grafo bipartido e estados do algoritmo."""
 
 import networkx as nx
-from typing import List, Tuple, Dict, Set
 from models.aluno_model import Aluno
 from models.projeto_model import Projeto
+
 
 class Matchings:
     """
@@ -25,7 +25,7 @@ class MatchingState:
     Deve armazenar:
         1. Matching (dicionário aluno -> projeto)
         2. dicionário projeto -> lista de alunos emparelhados
-        3. conjunto de alunos ainda não emparelhados
+        3. lista de alunos ainda não emparelhados
         4. histórico de propostas já feitas por cada aluno
             (para saber qual é a próxima preferência a tentar)
             a) proposed_edges e rejected_edges
@@ -33,13 +33,13 @@ class MatchingState:
 
     # atributos indefinidos por enquanto
     def __init__(
-        self, 
-        matching:List[Tuple[Aluno, Projeto]], 
-        proposed_edges: List[Dict], 
-        rejected_edges: List[Dict], 
-        allocated_projects: Dict[str, List[Aluno]],
-        free_students: List[Aluno],
-        iteration=0
+        self,
+        matching: list[tuple[Aluno, Projeto]],
+        proposed_edges: list[dict],
+        rejected_edges: list[dict],
+        allocated_projects: dict[str, list[Aluno]],
+        free_students: list[Aluno],
+        iteration: int = 0,
     ):
         self.iteration = iteration
         self.matching = matching
@@ -52,16 +52,15 @@ class MatchingState:
             aluno.cod: projeto for aluno, projeto in matching
         }
 
-
     def is_matched(self, aluno: Aluno, projeto: Projeto) -> bool:
         """Verifica se um aluno está atualmente emparelhado com um dado projeto."""
         return self._index.get(aluno.cod) is projeto
- 
+
     def has_capacity(self, projeto: Projeto) -> bool:
         """Verifica se um projeto ainda tem vagas disponíveis."""
         current = self.allocated_projects.get(projeto.cod, [])
         return len(current) < projeto.num_vagas
-    
+
     def get_allocated_students(self, projeto: Projeto) -> list[Aluno]:
         """Retorna a lista de alunos atualmente alocados a um projeto."""
         return self.allocated_projects.get(projeto.cod, [])
@@ -73,19 +72,20 @@ class MatchingState:
         # Como não podemos deixar projetos sem alocação creio que
         # essa verificação é válida (adiciona aluno na lista de alunos do projeto)
         self.allocated_projects.setdefault(projeto.cod, []).append(aluno)
-        self.free_students.discard(aluno.cod)
-    
+        if aluno in self.free_students:
+            self.free_students.remove(aluno)
+
     def remove_pair(self, aluno: Aluno, projeto: Projeto) -> None:
         """Remove o par (Aluno, Projeto) do emparelhamento."""
-        self.matching = [
+        self.matching[:] = [
             (a, p) for a, p in self.matching if a is not aluno or p is not projeto
         ]
         self._index.pop(aluno.cod, None)
         alocados = self.allocated_projects.get(projeto.cod, [])
         if aluno in alocados:
             alocados.remove(aluno)
-        self.free_students.add(aluno.cod)
-
+        if aluno not in self.free_students:
+            self.free_students.append(aluno)
 
     def __deepcopy__(self, memo: dict) -> MatchingState:
         """
@@ -109,24 +109,22 @@ class MatchingState:
         new_state.matching = list(self.matching)
         new_state.proposed_edges = [e.copy() for e in self.proposed_edges]
         new_state.rejected_edges = [e.copy() for e in self.rejected_edges]
-        new_state.free_students = set(self.free_students)
+        new_state.free_students = list(self.free_students)
         new_state.allocated_projects = {
-            cod: list(alunos)
-            for cod, alunos in self.allocated_projects.items()
+            cod: list(alunos) for cod, alunos in self.allocated_projects.items()
         }
 
         # Índice auxiliar — reconstruído a partir dos pares copiados
-        new_state._index = {
-            aluno.cod: projeto for aluno, projeto in new_state.matching
-        }
+        new_state._index = {aluno.cod: projeto for aluno, projeto in new_state.matching}
 
         return new_state
 
     # Define representação legível do objeto para debug (print/debugger)
     def __repr__(self) -> str:
         pairs = [(a.cod, p.cod) for a, p in self.matching]
+        free = [a.cod for a in self.free_students]
         return (
             f"MatchingState(iteration={self.iteration},\n"
             f"  matching={pairs},\n"
-            f"  free_students={self.free_students})"
+            f"  free_students={free})"
         )

@@ -20,42 +20,35 @@ def parse_input_file(filepath: str):
     """
     l_projetos = []
     l_alunos = []
-    proj_regex = re.compile(r'\((P\d{1,2}),\s*(\d+),\s*(\d+)\)')
-    alunos_regex = re.compile(r'\((A\d{1,2})\)\s*:\s*\(\s*((?:P\d{1,2})(?:\s*,\s*P\d{1,2})*)\s*\)\s*\((\d+)\)')
+    proj_regex = re.compile(r"\((P\d{1,2}),\s*(\d+),\s*(\d+)\)")
+    alunos_regex = re.compile(
+        r"\((A\d{1,2})\)\s*:\s*\(\s*((?:P\d{1,2})(?:\s*,\s*P\d{1,2})*)\s*\)\s*\((\d+)\)"
+    )
 
-    with open (filepath, "r") as file:
+    with open(filepath, "r", encoding="utf-8") as file:
         for line in file:
             match = proj_regex.search(line)
             if match:
                 cod, num_vagas, nota_min = match.groups()
-                l_projetos.append({
-                    "cod": cod,
-                    "num_vagas": int(num_vagas),
-                    "nota_min": int(nota_min)
-                })
+                l_projetos.append(
+                    {"cod": cod, "num_vagas": int(num_vagas), "nota_min": int(nota_min)}
+                )
                 continue
             match = alunos_regex.search(line)
             if match:
                 cod, projetos, nota = match.groups()
-                l_alunos.append({
-                    "cod": cod,
-                    "projetos": [
-                        p.strip()
-                        for p in projetos.split(",")],
-                    "nota": int(nota)
-                })
+                l_alunos.append(
+                    {
+                        "cod": cod,
+                        "projetos": [p.strip() for p in projetos.split(",")],
+                        "nota": int(nota),
+                    }
+                )
 
-    projetos = [
-        Projeto(**p)
-        for p in l_projetos
-    ]
-    alunos = [
-        Aluno(**a)
-        for a in l_alunos
-    ]
+    projetos = [Projeto(**p) for p in l_projetos]
+    alunos = [Aluno(**a) for a in l_alunos]
 
     return projetos, alunos
-
 
 
 def validate_parsed_data(projetos: list, alunos: list) -> None:
