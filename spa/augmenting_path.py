@@ -93,7 +93,7 @@ def augment_matching(path: list[Node], state: MatchingState) -> None:
 def run_iterations(
     graph: nx.Graph,
     initial_state: MatchingState,
-    all_alunos: List[Aluno],
+    all_alunos: list[Aluno],
     n_iterations: int = 10,
     on_iteration_end: Callable[[MatchingState, dict, int], None] | None = None,
 ):

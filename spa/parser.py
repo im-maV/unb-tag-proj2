@@ -21,9 +21,9 @@ def parse_input_file(filepath: str):
     """
     l_projetos = []
     l_alunos = []
-    proj_regex = re.compile(r"\((P\d{1,2}),\s*(\d+),\s*(\d+)\)")
+    proj_regex = re.compile(r"\((P\d+),\s*(\d+),\s*(\d+)\)")
     alunos_regex = re.compile(
-        r"\((A\d{1,2})\)\s*:\s*\(\s*((?:P\d{1,2})(?:\s*,\s*P\d{1,2})*)\s*\)\s*\((\d+)\)"
+        r"\((A\d+)\)\s*:\s*\(\s*((?:P\d+)(?:\s*,\s*P\d+)*)\s*\)\s*\((\d+)\)"
     )
 
     with open(filepath, "r", encoding="utf-8") as file:

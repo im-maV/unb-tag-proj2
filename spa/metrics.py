@@ -80,7 +80,8 @@ def student_rank_in_project_list(
         return None
 
     ranked = sorted(
-        candidatos, key=lambda a: graph.nodes[a].get("nota", 0), reverse=True
+        candidatos,
+        key=lambda a: (-graph.nodes[a].get("nota", 0), a.cod),
     )
     try:
         return ranked.index(student) + 1

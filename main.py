@@ -78,9 +78,28 @@ def main() -> None:
     matching_matrix = spa.build_final_matching_matrix(final_state, graph)
 
     # 7. Saída final
-    print(
-        f"Emparelhamento final: {len(final_state.matching)} de {len(alunos)} alunos alocados"
-    )
+    n_alocados = len(final_state.matching)
+    n_total = len(alunos)
+    n_livres = len(final_state.free_students)
+    projetos_vazios = [
+        p.cod
+        for p in projetos
+        if not any(proj == p for _, proj in final_state.matching)
+    ]
+
+    print("=" * 60)
+    print("RESULTADO FINAL")
+    print("=" * 60)
+    print(f"Alunos alocados: {n_alocados} / {n_total} ({100*n_alocados/n_total:.1f}%)")
+    print(f"Alunos sem projeto: {n_livres}")
+    if projetos_vazios:
+        print(
+            f"[AVISO] Projetos sem alunos ({len(projetos_vazios)}): {projetos_vazios}"
+        )
+    print("Matriz salva em: output/matching_matrix.csv")
+    print("Gráficos salvos em: output/")
+    print("=" * 60)
+
     spa.plot_preference_index_summary(preference_indices)
     spa.save_matching_matrix_csv(matching_matrix)
 

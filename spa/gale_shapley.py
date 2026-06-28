@@ -39,8 +39,10 @@ def propose(
         matching.append((aluno, projeto))
         if reject_aluno:
             # Remove emparelhamento do aluno expulso e recoloca na fila)
-            matching = [(a, b) for a, b in matching if a.cod != reject_aluno.cod]
+            to_remove = [(a, p) for a, p in matching if a.cod == reject_aluno.cod]
             # reject_aluno.prox_preferencia
+            for pair in to_remove:
+                matching.remove(pair)
             free_alunos.append(reject_aluno)
             rejected_edges.append({"aluno": reject_aluno.cod, "projeto": projeto_cod})
     else:
