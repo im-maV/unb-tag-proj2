@@ -35,7 +35,7 @@ class MatchingState:
     def __init__(
         self, 
         matching:List[Tuple[Aluno, Projeto]], 
-        proposed_edges: List[Dict], 
+        proposed_edges: List[Dict],
         rejected_edges: List[Dict], 
         allocated_projects: Dict[str, List[Aluno]],
         free_students: List[Aluno],
@@ -73,7 +73,8 @@ class MatchingState:
         # Como não podemos deixar projetos sem alocação creio que
         # essa verificação é válida (adiciona aluno na lista de alunos do projeto)
         self.allocated_projects.setdefault(projeto.cod, []).append(aluno)
-        self.free_students.discard(aluno.cod)
+        if aluno in self.free_students:
+            self.free_students.remove(aluno)
     
     def remove_pair(self, aluno: Aluno, projeto: Projeto) -> None:
         """Remove o par (Aluno, Projeto) do emparelhamento."""
@@ -84,8 +85,12 @@ class MatchingState:
         alocados = self.allocated_projects.get(projeto.cod, [])
         if aluno in alocados:
             alocados.remove(aluno)
-        self.free_students.add(aluno.cod)
+        self.free_students.append(aluno)
 
+    def update_free_students(self, all_students: list[Aluno]) -> None:
+        """Recomputa free_students comparando todos os alunos com o índice atual."""
+        matched_cods = set(self._index.keys())
+        self.free_students = [a for a in all_students if a.cod not in matched_cods]
 
     def __deepcopy__(self, memo: dict) -> MatchingState:
         """
@@ -109,7 +114,7 @@ class MatchingState:
         new_state.matching = list(self.matching)
         new_state.proposed_edges = [e.copy() for e in self.proposed_edges]
         new_state.rejected_edges = [e.copy() for e in self.rejected_edges]
-        new_state.free_students = set(self.free_students)
+        new_state.free_students = list(self.free_students)
         new_state.allocated_projects = {
             cod: list(alunos)
             for cod, alunos in self.allocated_projects.items()
