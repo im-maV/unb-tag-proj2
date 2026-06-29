@@ -44,6 +44,9 @@ def main() -> None:
         iteration=0,
     )
 
+    spa.is_stable_matching(matching=m, graph=graph)
+
+
     # Plota o estado inicial — matching do Gale-Shapley antes de qualquer iteração
     initial_log = {
         "matched_edges": [(s, p) for s, p in m],
@@ -67,11 +70,7 @@ def main() -> None:
     final_state = iteration_states[-1]
 
     # 5. Validação
-    # assert spa.is_stable_matching(final_state, graph, projetos), (
-    #     "Emparelhamento final não é estável — revisar critério de "
-    #     "aceite/rejeição do Gale-Shapley ou a busca por caminhos "
-    #     "aumentantes."
-    # )
+    spa.is_stable_matching(matching=final_state.matching, graph=graph)
 
     # 6. Métricas
     preference_indices = spa.compute_all_preference_indices(final_state, graph)
@@ -99,6 +98,7 @@ def main() -> None:
     print("Matriz salva em: output/matching_matrix.csv")
     print("Gráficos salvos em: output/")
     print("=" * 60)
+
 
     spa.plot_preference_index_summary(preference_indices)
     spa.save_matching_matrix_csv(matching_matrix)
