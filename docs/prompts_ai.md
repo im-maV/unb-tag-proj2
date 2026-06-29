@@ -52,3 +52,12 @@ Com base nas propostas geradas pelo modelo, foram feitas as seguintes correçõe
 1. Verificação minimo alunos por projeto
 2. Movido a logica do propose para fora do loop principal
 
+
+
+# Prompt 03 - Verificação de Estabilidade
+### Prompt
+Com base na especificação do projeto, defina uma módulo de verificação de estabilidade em um emparelhamento. Defina ao menos duas funçõa:
+- is_stable_matching()
+- find_blocking_pairs()
+O objetivo é verificar se há um par blocante (Aluno, Projeto) de tal forma que:
+1. Aluno an e pm não estão emparelhados entre si de tal forma que an prefere pm ao seu p atual, e pm aceitaria an (ou seja, an.nota >= pm.nota_min e an.nota > pior(pm.pior_aluno))

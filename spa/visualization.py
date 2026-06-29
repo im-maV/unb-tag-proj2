@@ -19,7 +19,15 @@ from models.matching_model import MatchingState
 from models.projeto_model import Projeto
 from spa.graph_builder import get_bipartite_sets
 
-matplotlib.use("Agg")
+try:
+    from IPython import get_ipython  # type: ignore
+
+    shell = get_ipython()
+    if shell is None:
+        matplotlib.use("Agg")
+except (ImportError, NameError):
+    matplotlib.use("Agg")
+
 EdgePair = tuple[str, str]
 
 Node = Aluno | Projeto
@@ -243,7 +251,7 @@ def plot_bipartite_iteration(
     for x_pos, text in col_headers:
         ax.text(
             x_pos,
-            1.008,
+            1.0,
             text,
             color=VisualConfig.C_TEXT_MAIN,
             fontsize=12,
@@ -265,7 +273,7 @@ def plot_bipartite_iteration(
     ax.legend(
         handles=legend_patches,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.025),
+        bbox_to_anchor=(0.5, 1.0),
         ncol=6,
         frameon=True,
         facecolor=VisualConfig.C_BG_PANEL,
@@ -281,11 +289,19 @@ def plot_bipartite_iteration(
         color=VisualConfig.C_TEXT_MAIN,
         fontsize=14,
         fontweight="bold",
-        pad=35,
+        pad=5,
     )
 
+    # Descobre a coordenada Y exata do nó mais alto e do mais baixo
+    coords_y = [coord[1] for coord in pos.values()]
+    y_topo, y_base = max(coords_y), min(coords_y)
+    span = y_topo - y_base
+
+    # Margem automática de 5% para apenas 1.2%
+    respiro = span * 0.012
+
+    ax.set_ylim(y_base - respiro, y_topo + respiro)
     ax.axis("off")
-    plt.tight_layout()
     _save_figure(f"iteracao_{state.iteration}.png")
 
 
